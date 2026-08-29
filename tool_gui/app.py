@@ -229,4 +229,6 @@ class ToolDLApp(ctk.CTk):
 
     def destroy(self):
         self._clip_thread_running = False
+        if hasattr(self, "download_view") and self.download_view and getattr(self.download_view, "browser_mgr", None):
+            self.download_view.browser_mgr.stop()
         super().destroy()
