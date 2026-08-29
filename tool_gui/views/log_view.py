@@ -20,21 +20,21 @@ class LogView(ctk.CTkFrame):
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.pack(fill="x", padx=20, pady=(20, 10))
 
-        title = ctk.CTkLabel(header, text="📜 NHẬT KÝ HOẠT ĐỘNG THỜI GIAN THỰC", font=("Segoe UI", 15, "bold"))
+        title = ctk.CTkLabel(header, text="📜 NHẬT KÝ HOẠT ĐỘNG THỜI GIAN THỰC", font=("Segoe UI", 16, "bold"), text_color=("#1D4ED8", "#60A5FA"))
         title.pack(side="left")
 
         # Nút thao tác
-        copy_btn = ctk.CTkButton(header, text="📋 Sao chép", width=90, height=32, command=self.on_copy, fg_color="#64748B", hover_color="#475569")
-        copy_btn.pack(side="right", padx=(5, 0))
+        copy_btn = ctk.CTkButton(header, text="📋 Sao chép", width=100, height=36, command=self.on_copy, fg_color="#475569", hover_color="#334155", font=("Segoe UI", 11, "bold"))
+        copy_btn.pack(side="right", padx=(6, 0))
 
-        clear_btn = ctk.CTkButton(header, text="🧹 Xóa log", width=90, height=32, command=self.on_clear, fg_color="#EF4444", hover_color="#DC2626")
-        clear_btn.pack(side="right", padx=(5, 0))
+        clear_btn = ctk.CTkButton(header, text="🧹 Xóa log", width=100, height=36, command=self.on_clear, fg_color="#DC2626", hover_color="#B91C1C", font=("Segoe UI", 11, "bold"))
+        clear_btn.pack(side="right", padx=(6, 0))
 
-        export_btn = ctk.CTkButton(header, text="💾 Xuất file", width=90, height=32, command=self.on_export, fg_color="#3B82F6", hover_color="#2563EB")
-        export_btn.pack(side="right", padx=(5, 0))
+        export_btn = ctk.CTkButton(header, text="💾 Xuất file", width=100, height=36, command=self.on_export, fg_color="#2563EB", hover_color="#1D4ED8", font=("Segoe UI", 11, "bold"))
+        export_btn.pack(side="right", padx=(6, 0))
 
         # Textbox hiển thị logs
-        self.log_text = ctk.CTkTextbox(self, font=("Consolas", 11), wrap="word")
+        self.log_text = ctk.CTkTextbox(self, font=("Consolas", 12), wrap="word")
         self.log_text.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
     def append_log(self, msg: str):

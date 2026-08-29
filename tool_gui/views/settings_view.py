@@ -58,54 +58,56 @@ class SettingsView(ctk.CTkFrame):
     # =========================================================================
     def _setup_tab_general(self):
         scroll = ctk.CTkScrollableFrame(self.tab_general, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=10, pady=8)
+        scroll.pack(fill="both", expand=True, padx=12, pady=10)
 
         # 1. Khung Giao Diện & Thư Mục
-        g_card = ctk.CTkFrame(scroll, corner_radius=8)
+        g_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         g_card.pack(fill="x", pady=(0, 10))
 
         g_inner = ctk.CTkFrame(g_card, fg_color="transparent")
-        g_inner.pack(fill="x", padx=15, pady=12)
+        g_inner.pack(fill="x", padx=16, pady=14)
 
-        ctk.CTkLabel(g_inner, text="🖥️ GIAO DIỆN & LƯU TRỮ", font=("Segoe UI", 12, "bold"), text_color=("#2563EB", "#60A5FA")).pack(anchor="w", pady=(0, 8))
+        ctk.CTkLabel(g_inner, text="🖥️ GIAO DIỆN & LƯU TRỮ", font=("Segoe UI", 13, "bold"), text_color=("#1D4ED8", "#60A5FA")).pack(anchor="w", pady=(0, 10))
 
         theme_row = ctk.CTkFrame(g_inner, fg_color="transparent")
-        theme_row.pack(fill="x", pady=(0, 6))
-        ctk.CTkLabel(theme_row, text="Chế độ giao diện:", font=("Segoe UI", 11)).pack(side="left", padx=(0, 10))
+        theme_row.pack(fill="x", pady=(0, 8))
+        ctk.CTkLabel(theme_row, text="Chế độ giao diện:", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=(0, 10))
         self.theme_combo = ctk.CTkComboBox(
             theme_row,
             values=["Tối (Dark Mode)", "Sáng (Light Mode)", "Theo hệ thống (System)"],
             command=self.on_theme_changed,
-            height=28
+            height=32,
+            font=("Segoe UI", 11)
         )
         self.theme_combo.pack(side="right", fill="x", expand=True)
 
-        ctk.CTkLabel(g_inner, text="Thư mục tải xuống mặc định:", font=("Segoe UI", 11)).pack(anchor="w", pady=(4, 2))
+        ctk.CTkLabel(g_inner, text="Thư mục tải xuống mặc định:", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(anchor="w", pady=(4, 2))
         dir_box = ctk.CTkFrame(g_inner, fg_color="transparent")
-        dir_box.pack(fill="x", pady=(0, 6))
-        self.dir_entry = ctk.CTkEntry(dir_box, font=("Segoe UI", 10), height=28)
+        dir_box.pack(fill="x", pady=(0, 8))
+        self.dir_entry = ctk.CTkEntry(dir_box, font=("Segoe UI", 11), height=32)
         self.dir_entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
-        ctk.CTkButton(dir_box, text="📂 Duyệt", width=65, height=28, command=self.on_browse, fg_color="#64748B", hover_color="#475569", font=("Segoe UI", 10)).pack(side="right")
+        ctk.CTkButton(dir_box, text="📂 Duyệt", width=75, height=32, command=self.on_browse, fg_color="#475569", hover_color="#334155", font=("Segoe UI", 11, "bold")).pack(side="right")
 
-        ctk.CTkLabel(g_inner, text="Nguồn Cookie xác thực:", font=("Segoe UI", 11)).pack(anchor="w", pady=(4, 2))
+        ctk.CTkLabel(g_inner, text="Nguồn Cookie xác thực:", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(anchor="w", pady=(4, 2))
         self.cookie_combo = ctk.CTkComboBox(
             g_inner,
             values=["Không dùng Cookie", "Google Chrome", "Microsoft Edge", "Mozilla Firefox", "Brave Browser", "Opera", "Tệp Cookie (.txt)"],
-            height=28
+            height=32,
+            font=("Segoe UI", 11)
         )
         self.cookie_combo.pack(fill="x", pady=(0, 4))
 
         # 2. Khung Cấu hình DNS & Vượt chặn
-        dns_card = ctk.CTkFrame(scroll, corner_radius=8, fg_color=("#E2E8F0", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
+        dns_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         dns_card.pack(fill="x", pady=(0, 10))
 
         dns_inner = ctk.CTkFrame(dns_card, fg_color="transparent")
-        dns_inner.pack(fill="x", padx=15, pady=12)
+        dns_inner.pack(fill="x", padx=16, pady=14)
 
         dns_hdr = ctk.CTkFrame(dns_inner, fg_color="transparent")
-        dns_hdr.pack(fill="x", pady=(0, 6))
-        ctk.CTkLabel(dns_hdr, text="🌐 Cấu hình DNS & Vượt chặn Web (DoH):", font=("Segoe UI", 12, "bold"), text_color=("#2563EB", "#60A5FA")).pack(side="left")
-        self.btn_test_dns = ctk.CTkButton(dns_hdr, text="⚡ Test DNS", width=75, height=24, command=self.on_test_dns, font=("Segoe UI", 9, "bold"), fg_color="#3B82F6", hover_color="#2563EB")
+        dns_hdr.pack(fill="x", pady=(0, 8))
+        ctk.CTkLabel(dns_hdr, text="🌐 Cấu hình DNS & Vượt chặn Web (DoH):", font=("Segoe UI", 13, "bold"), text_color=("#1D4ED8", "#60A5FA")).pack(side="left")
+        self.btn_test_dns = ctk.CTkButton(dns_hdr, text="⚡ Test DNS", width=90, height=28, command=self.on_test_dns, font=("Segoe UI", 10, "bold"), fg_color="#2563EB", hover_color="#1D4ED8")
         self.btn_test_dns.pack(side="right")
 
         self.dns_combo = ctk.CTkComboBox(
@@ -119,78 +121,79 @@ class SettingsView(ctk.CTkFrame):
                 "🌟 Mặc định hệ thống (ISP)"
             ],
             command=self.on_dns_choice_changed,
-            height=28
+            height=32,
+            font=("Segoe UI", 11)
         )
-        self.dns_combo.pack(fill="x", pady=(0, 6))
+        self.dns_combo.pack(fill="x", pady=(0, 8))
 
         self.custom_dns_frame = ctk.CTkFrame(dns_inner, fg_color="transparent")
-        ctk.CTkLabel(self.custom_dns_frame, text="DNS Servers (cách nhau dấu phẩy):", font=("Segoe UI", 9)).pack(anchor="w")
-        self.custom_dns_entry = ctk.CTkEntry(self.custom_dns_frame, placeholder_text="VD: 1.1.1.1, 1.0.0.1", height=26, font=("Consolas", 9))
-        self.custom_dns_entry.pack(fill="x", pady=(0, 2))
-        ctk.CTkLabel(self.custom_dns_frame, text="DoH URL (DNS over HTTPS):", font=("Segoe UI", 9)).pack(anchor="w")
-        self.custom_doh_entry = ctk.CTkEntry(self.custom_dns_frame, placeholder_text="VD: https://cloudflare-dns.com/dns-query", height=26, font=("Consolas", 9))
+        ctk.CTkLabel(self.custom_dns_frame, text="DNS Servers (cách nhau dấu phẩy):", font=("Segoe UI", 11, "bold")).pack(anchor="w")
+        self.custom_dns_entry = ctk.CTkEntry(self.custom_dns_frame, placeholder_text="VD: 1.1.1.1, 1.0.0.1", height=30, font=("Consolas", 11))
+        self.custom_dns_entry.pack(fill="x", pady=(0, 4))
+        ctk.CTkLabel(self.custom_dns_frame, text="DoH URL (DNS over HTTPS):", font=("Segoe UI", 11, "bold")).pack(anchor="w")
+        self.custom_doh_entry = ctk.CTkEntry(self.custom_dns_frame, placeholder_text="VD: https://cloudflare-dns.com/dns-query", height=30, font=("Consolas", 11))
         self.custom_doh_entry.pack(fill="x")
 
-        self.dns_test_lbl = ctk.CTkLabel(dns_inner, text="💡 DNS giúp truy cập các trang web/video bị nhà mạng ISP chặn.", font=("Segoe UI", 9), text_color=("#64748B", "#94A3B8"), anchor="w")
-        self.dns_test_lbl.pack(anchor="w", pady=(4, 0))
+        self.dns_test_lbl = ctk.CTkLabel(dns_inner, text="💡 DNS giúp truy cập các trang web/video bị nhà mạng ISP chặn.", font=("Segoe UI", 11), text_color=("#475569", "#94A3B8"), anchor="w")
+        self.dns_test_lbl.pack(anchor="w", pady=(6, 0))
 
         # Checkboxes
-        chk_card = ctk.CTkFrame(scroll, corner_radius=8)
+        chk_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         chk_card.pack(fill="x", pady=(0, 10))
         chk_in = ctk.CTkFrame(chk_card, fg_color="transparent")
-        chk_in.pack(fill="x", padx=15, pady=10)
+        chk_in.pack(fill="x", padx=16, pady=12)
 
-        self.pot_cb = ctk.CTkCheckBox(chk_in, text="🛡️ Chống chặn YouTube (PO Token Provider)", font=("Segoe UI", 11))
+        self.pot_cb = ctk.CTkCheckBox(chk_in, text="🛡️ Chống chặn YouTube (PO Token Provider)", font=("Segoe UI", 11, "bold"))
         self.pot_cb.select()
-        self.pot_cb.pack(anchor="w", pady=(0, 6))
+        self.pot_cb.pack(anchor="w", pady=(0, 8))
 
-        self.clip_cb = ctk.CTkCheckBox(chk_in, text="📋 Tự động bắt liên kết từ Clipboard", font=("Segoe UI", 11))
+        self.clip_cb = ctk.CTkCheckBox(chk_in, text="📋 Tự động bắt liên kết từ Clipboard", font=("Segoe UI", 11, "bold"))
         self.clip_cb.pack(anchor="w")
 
         # Nút Lưu Cài Đặt Chung
         save_btn = ctk.CTkButton(
             scroll,
             text="💾 LƯU CÀI ĐẶT CHUNG",
-            height=38,
+            height=42,
             command=lambda: self.save_general_settings(show_dialog=True),
-            font=("Segoe UI", 12, "bold"),
-            fg_color="#10B981",
-            hover_color="#059669"
+            font=("Segoe UI", 13, "bold"),
+            fg_color="#059669",
+            hover_color="#047857"
         )
-        save_btn.pack(fill="x", pady=(5, 10))
+        save_btn.pack(fill="x", pady=(6, 12))
 
     # =========================================================================
     # TAB 2: PHỤ TRỢ & CẬP NHẬT (FFMPEG & YT-DLP CORE)
     # =========================================================================
     def _setup_tab_tools(self):
         scroll = ctk.CTkScrollableFrame(self.tab_tools, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=10, pady=8)
+        scroll.pack(fill="both", expand=True, padx=12, pady=10)
 
         # 1. THẺ FFMPEG
-        ffmpeg_card = ctk.CTkFrame(scroll, corner_radius=8)
+        ffmpeg_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         ffmpeg_card.pack(fill="x", pady=(0, 10))
 
         ff_inner = ctk.CTkFrame(ffmpeg_card, fg_color="transparent")
-        ff_inner.pack(fill="x", padx=15, pady=12)
+        ff_inner.pack(fill="x", padx=16, pady=14)
 
-        ctk.CTkLabel(ff_inner, text="🎬 TRÌNH XỬ LÝ VIDEO & ÂM THANH (FFMPEG)", font=("Segoe UI", 12, "bold"), text_color=("#2563EB", "#60A5FA")).pack(anchor="w", pady=(0, 4))
-        ctk.CTkLabel(ff_inner, text="FFmpeg là phụ trợ bắt buộc để ghép luồng Video 1080p/2K/4K với Audio chất lượng cao, trích xuất nhạc MP3/M4A và nhúng phụ đề.", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"), wraplength=620, justify="left").pack(anchor="w", pady=(0, 8))
+        ctk.CTkLabel(ff_inner, text="🎬 TRÌNH XỬ LÝ VIDEO & ÂM THANH (FFMPEG)", font=("Segoe UI", 13, "bold"), text_color=("#1D4ED8", "#60A5FA")).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(ff_inner, text="FFmpeg là phụ trợ bắt buộc để ghép luồng Video 1080p/2K/4K với Audio chất lượng cao, trích xuất nhạc MP3/M4A và nhúng phụ đề.", font=("Segoe UI", 11), text_color=("#475569", "#94A3B8"), wraplength=640, justify="left").pack(anchor="w", pady=(0, 8))
 
-        ff_info_box = ctk.CTkFrame(ff_inner, fg_color=("#E2E8F0", "#1E293B"), corner_radius=6)
+        ff_info_box = ctk.CTkFrame(ff_inner, fg_color=("#EFF6FF", "#0F172A"), corner_radius=8, border_width=1, border_color=("#3B82F6", "#1D4ED8"))
         ff_info_box.pack(fill="x", pady=(0, 8))
 
         ff_info_in = ctk.CTkFrame(ff_info_box, fg_color="transparent")
-        ff_info_in.pack(fill="x", padx=10, pady=8)
+        ff_info_in.pack(fill="x", padx=12, pady=10)
 
-        self.ff_status_lbl = ctk.CTkLabel(ff_info_in, text="Trạng thái: Đang kiểm tra...", font=("Segoe UI", 11, "bold"))
+        self.ff_status_lbl = ctk.CTkLabel(ff_info_in, text="Trạng thái: Đang kiểm tra...", font=("Segoe UI", 12, "bold"))
         self.ff_status_lbl.pack(anchor="w", pady=(0, 2))
-        self.ff_path_lbl = ctk.CTkLabel(ff_info_in, text="Đường dẫn: --", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"))
+        self.ff_path_lbl = ctk.CTkLabel(ff_info_in, text="Đường dẫn: --", font=("Segoe UI", 11), text_color=("#475569", "#94A3B8"))
         self.ff_path_lbl.pack(anchor="w")
 
-        self.ff_prog_lbl = ctk.CTkLabel(ff_inner, text="", font=("Segoe UI", 10))
+        self.ff_prog_lbl = ctk.CTkLabel(ff_inner, text="", font=("Segoe UI", 11))
         self.ff_prog_lbl.pack(anchor="w", pady=(0, 2))
 
-        self.ff_prog_bar = ctk.CTkProgressBar(ff_inner, height=8, corner_radius=4)
+        self.ff_prog_bar = ctk.CTkProgressBar(ff_inner, height=9, corner_radius=4)
         self.ff_prog_bar.set(0.0)
         self.ff_prog_bar.pack(fill="x", pady=(0, 8))
         self.ff_prog_bar.pack_forget()
@@ -202,10 +205,10 @@ class SettingsView(ctk.CTkFrame):
             ff_btn_row,
             text="⬇️ TỰ ĐỘNG TẢI & CÀI ĐẶT FFMPEG",
             command=self.on_download_ffmpeg,
-            height=34,
-            font=("Segoe UI", 11, "bold"),
-            fg_color="#10B981",
-            hover_color="#059669"
+            height=36,
+            font=("Segoe UI", 12, "bold"),
+            fg_color="#059669",
+            hover_color="#047857"
         )
         self.ff_install_btn.pack(side="left", padx=(0, 8))
 
@@ -213,51 +216,51 @@ class SettingsView(ctk.CTkFrame):
             ff_btn_row,
             text="🔄 Kiểm tra lại",
             command=self.refresh_tools_status,
-            width=110,
-            height=34,
-            font=("Segoe UI", 11),
-            fg_color="#64748B",
-            hover_color="#475569"
+            width=120,
+            height=36,
+            font=("Segoe UI", 11, "bold"),
+            fg_color="#475569",
+            hover_color="#334155"
         )
         self.ff_refresh_btn.pack(side="left")
 
         # 2. THẺ YT-DLP CORE
-        ytdlp_card = ctk.CTkFrame(scroll, corner_radius=8)
+        ytdlp_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         ytdlp_card.pack(fill="x", pady=(0, 10))
 
         yt_inner = ctk.CTkFrame(ytdlp_card, fg_color="transparent")
-        yt_inner.pack(fill="x", padx=15, pady=12)
+        yt_inner.pack(fill="x", padx=16, pady=14)
 
-        ctk.CTkLabel(yt_inner, text="🚀 LÕI TẢI VIDEO ĐA NỀN TẢNG (YT-DLP CORE)", font=("Segoe UI", 12, "bold"), text_color=("#2563EB", "#60A5FA")).pack(anchor="w", pady=(0, 4))
-        ctk.CTkLabel(yt_inner, text="Cập nhật yt-dlp thường xuyên giúp khắc phục các lỗi thay đổi API từ YouTube, TikTok, Facebook, Instagram.", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"), wraplength=620, justify="left").pack(anchor="w", pady=(0, 8))
+        ctk.CTkLabel(yt_inner, text="🚀 LÕI TẢI VIDEO ĐA NỀN TẢNG (YT-DLP CORE)", font=("Segoe UI", 13, "bold"), text_color=("#1D4ED8", "#60A5FA")).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(yt_inner, text="Cập nhật yt-dlp thường xuyên giúp khắc phục các lỗi thay đổi API từ YouTube, TikTok, Facebook, Instagram.", font=("Segoe UI", 11), text_color=("#475569", "#94A3B8"), wraplength=640, justify="left").pack(anchor="w", pady=(0, 8))
 
-        yt_info_box = ctk.CTkFrame(yt_inner, fg_color=("#E2E8F0", "#1E293B"), corner_radius=6)
+        yt_info_box = ctk.CTkFrame(yt_inner, fg_color=("#EFF6FF", "#0F172A"), corner_radius=8, border_width=1, border_color=("#3B82F6", "#1D4ED8"))
         yt_info_box.pack(fill="x", pady=(0, 8))
 
         yt_info_in = ctk.CTkFrame(yt_info_box, fg_color="transparent")
-        yt_info_in.pack(fill="x", padx=10, pady=8)
+        yt_info_in.pack(fill="x", padx=12, pady=10)
 
-        self.yt_ver_lbl = ctk.CTkLabel(yt_info_in, text=f"Phiên bản yt-dlp hiện tại: {self.updater.get_ytdlp_version()}", font=("Segoe UI", 11, "bold"))
+        self.yt_ver_lbl = ctk.CTkLabel(yt_info_in, text=f"Phiên bản yt-dlp hiện tại: {self.updater.get_ytdlp_version()}", font=("Segoe UI", 12, "bold"))
         self.yt_ver_lbl.pack(anchor="w", pady=(0, 2))
-        self.yt_status_lbl = ctk.CTkLabel(yt_info_in, text="Trạng thái: Đang hoạt động bình thường", font=("Segoe UI", 10), text_color="#10B981")
+        self.yt_status_lbl = ctk.CTkLabel(yt_info_in, text="Trạng thái: Đang hoạt động bình thường", font=("Segoe UI", 11, "bold"), text_color="#10B981")
         self.yt_status_lbl.pack(anchor="w")
 
         self.yt_update_btn = ctk.CTkButton(
             yt_inner,
             text="🔄 KIỂM TRA & CẬP NHẬT YT-DLP",
             command=self.on_update_ytdlp,
-            height=34,
-            font=("Segoe UI", 11, "bold"),
-            fg_color="#3B82F6",
-            hover_color="#2563EB"
+            height=36,
+            font=("Segoe UI", 12, "bold"),
+            fg_color="#2563EB",
+            hover_color="#1D4ED8"
         )
         self.yt_update_btn.pack(anchor="w")
 
         # 3. Tự động kiểm tra
-        auto_card = ctk.CTkFrame(scroll, corner_radius=8)
+        auto_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         auto_card.pack(fill="x", pady=(0, 10))
         auto_in = ctk.CTkFrame(auto_card, fg_color="transparent")
-        auto_in.pack(fill="x", padx=15, pady=10)
+        auto_in.pack(fill="x", padx=16, pady=12)
 
         self.auto_check_cb = ctk.CTkCheckBox(
             auto_in,
@@ -274,29 +277,29 @@ class SettingsView(ctk.CTkFrame):
     # =========================================================================
     def _setup_tab_license(self):
         scroll = ctk.CTkScrollableFrame(self.tab_license, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=10, pady=8)
+        scroll.pack(fill="both", expand=True, padx=12, pady=10)
 
-        lic_card = ctk.CTkFrame(scroll, corner_radius=8)
+        lic_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         lic_card.pack(fill="x", pady=(0, 10))
 
         l_in = ctk.CTkFrame(lic_card, fg_color="transparent")
-        l_in.pack(fill="x", padx=15, pady=12)
+        l_in.pack(fill="x", padx=16, pady=14)
 
-        ctk.CTkLabel(l_in, text="🔐 THÔNG TIN BẢN QUYỀN PRO", font=("Segoe UI", 12, "bold"), text_color=("#2563EB", "#60A5FA")).pack(anchor="w", pady=(0, 8))
+        ctk.CTkLabel(l_in, text="🔐 THÔNG TIN BẢN QUYỀN PRO", font=("Segoe UI", 13, "bold"), text_color=("#1D4ED8", "#60A5FA")).pack(anchor="w", pady=(0, 8))
 
-        lic_box = ctk.CTkFrame(l_in, fg_color=("#E2E8F0", "#1E293B"), corner_radius=6)
+        lic_box = ctk.CTkFrame(l_in, fg_color=("#EFF6FF", "#0F172A"), corner_radius=8, border_width=1, border_color=("#3B82F6", "#1D4ED8"))
         lic_box.pack(fill="x", pady=(0, 10))
 
         lb_in = ctk.CTkFrame(lic_box, fg_color="transparent")
-        lb_in.pack(fill="x", padx=12, pady=10)
+        lb_in.pack(fill="x", padx=14, pady=12)
 
-        self.lic_status_lbl = ctk.CTkLabel(lb_in, text="Trạng thái: 🟢 Đã kích hoạt bản quyền PRO", font=("Segoe UI", 11, "bold"), text_color="#10B981")
+        self.lic_status_lbl = ctk.CTkLabel(lb_in, text="Trạng thái: 🟢 Đã kích hoạt bản quyền PRO", font=("Segoe UI", 12, "bold"), text_color="#10B981")
         self.lic_status_lbl.pack(anchor="w", pady=(0, 4))
 
-        self.lic_exp_lbl = ctk.CTkLabel(lb_in, text="Hạn sử dụng: Vĩnh viễn (Lifetime)", font=("Segoe UI", 10))
+        self.lic_exp_lbl = ctk.CTkLabel(lb_in, text="Hạn sử dụng: Vĩnh viễn (Lifetime)", font=("Segoe UI", 11, "bold"))
         self.lic_exp_lbl.pack(anchor="w", pady=(0, 4))
 
-        self.lic_m_lbl = ctk.CTkLabel(lb_in, text=f"Mã thiết bị: {self.license_manager.get_machine_id()}", font=("Consolas", 10), text_color=("#64748B", "#94A3B8"))
+        self.lic_m_lbl = ctk.CTkLabel(lb_in, text=f"Mã thiết bị: {self.license_manager.get_machine_id()}", font=("Consolas", 11, "bold"), text_color=("#1D4ED8", "#60A5FA"))
         self.lic_m_lbl.pack(anchor="w")
 
         rekey_btn = ctk.CTkButton(

@@ -5,12 +5,10 @@ Bóc tách toàn bộ mảng dữ liệu `formats` từ yt-dlp, phân loại tr�
 1. 🎥 Luồng Video riêng biệt (Độ phân giải, FPS, Codec H.264/VP9/AV1, Bitrate, Dung lượng MB).
 2. 🎵 Luồng Âm thanh riêng biệt (Codec AAC/OPUS, Bitrate, Sample Rate, Ngôn ngữ thuyết minh).
 3. 🎬 Luồng Kết hợp sẵn (Video + Audio).
-Hỗ trợ tích chọn linh hoạt:
-- Tải chỉ Video (không tiếng)
-- Tải chỉ Âm thanh (không hình)
-- Tải cả Video + Âm thanh và ghép lại (vd: 137+140)
-- Tải luồng kết hợp có sẵn
-- Click lại dòng đã chọn để bỏ chọn (Toggle) hoặc bỏ dấu tích.
+Hỗ trợ:
+- Tích chọn / Bỏ chọn linh hoạt (Toggle on/off khi click lại)
+- Màu sắc tương phản cao, làm nổi bật rõ ràng dòng đang được chọn (Selected Row Highlight)
+- Tải chỉ Video (không tiếng), chỉ Âm thanh (không hình), hoặc ghép 2 luồng.
 """
 
 import tkinter as tk
@@ -34,9 +32,13 @@ class FormatPickerDialog(ctk.CTkToplevel):
         self.enable_video_var = tk.BooleanVar(value=True)
         self.enable_audio_var = tk.BooleanVar(value=True)
 
+        self.video_row_widgets = {}
+        self.audio_row_widgets = {}
+        self.combined_row_widgets = {}
+
         self.title("ToolDL Pro - Danh Sách Luồng Video & Âm Thanh Chi Tiết (Format Selector)")
-        self.geometry("1000x660")
-        self.minsize(820, 520)
+        self.geometry("1060x700")
+        self.minsize(860, 560)
         self.transient(master)
         self.after(50, self.lift)
 
@@ -215,25 +217,25 @@ class FormatPickerDialog(ctk.CTkToplevel):
 
     def setup_ui(self):
         container = ctk.CTkFrame(self, fg_color="transparent")
-        container.pack(fill="both", expand=True, padx=14, pady=12)
+        container.pack(fill="both", expand=True, padx=16, pady=14)
 
         # 1. Tiêu đề video header
-        top_hdr = ctk.CTkFrame(container, corner_radius=8, fg_color=("#F1F5F9", "#1E293B"))
-        top_hdr.pack(fill="x", pady=(0, 8))
+        top_hdr = ctk.CTkFrame(container, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
+        top_hdr.pack(fill="x", pady=(0, 10))
 
         th_inner = ctk.CTkFrame(top_hdr, fg_color="transparent")
-        th_inner.pack(fill="x", padx=12, pady=10)
+        th_inner.pack(fill="x", padx=14, pady=12)
 
         title = self.meta.get("title", "Video không tiêu đề")
         uploader = self.meta.get("uploader", "--")
         dur = self.meta.get("duration_str", "--")
 
-        ctk.CTkLabel(th_inner, text=f"🎬 {title}", font=("Segoe UI", 12, "bold"), anchor="w", justify="left").pack(anchor="w")
-        ctk.CTkLabel(th_inner, text=f"👤 Kênh: {uploader}  |  ⏱️ Thời lượng: {dur}  |  📊 Tìm thấy: {len(self.video_streams)} luồng Video, {len(self.audio_streams)} luồng Audio", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"), anchor="w").pack(anchor="w", pady=(2, 0))
+        ctk.CTkLabel(th_inner, text=f"🎬 {title}", font=("Segoe UI", 13, "bold"), text_color=("#0F172A", "#F8FAFC"), anchor="w", justify="left").pack(anchor="w")
+        ctk.CTkLabel(th_inner, text=f"👤 Kênh: {uploader}   |   ⏱️ Thời lượng: {dur}   |   📊 Tìm thấy: {len(self.video_streams)} luồng Video, {len(self.audio_streams)} luồng Audio", font=("Segoe UI", 11), text_color=("#475569", "#94A3B8"), anchor="w").pack(anchor="w", pady=(3, 0))
 
         # 2. Tabview hiển thị 3 nhóm luồng
-        self.tabview = ctk.CTkTabview(container, corner_radius=8)
-        self.tabview.pack(fill="both", expand=True, pady=(0, 8))
+        self.tabview = ctk.CTkTabview(container, corner_radius=10)
+        self.tabview.pack(fill="both", expand=True, pady=(0, 10))
 
         self.tab_video = self.tabview.add(f"🎥 Luồng Video Riêng ({len(self.video_streams)})")
         self.tab_audio = self.tabview.add(f"🎵 Luồng Âm Thanh Riêng ({len(self.audio_streams)})")
@@ -244,19 +246,19 @@ class FormatPickerDialog(ctk.CTkToplevel):
         self._build_combined_tab()
 
         # 3. Thanh thông tin lựa chọn & Nút áp dụng
-        bot_bar = ctk.CTkFrame(container, corner_radius=8, fg_color=("#F1F5F9", "#1E293B"))
+        bot_bar = ctk.CTkFrame(container, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         bot_bar.pack(fill="x")
 
         bb_inner = ctk.CTkFrame(bot_bar, fg_color="transparent")
-        bb_inner.pack(fill="x", padx=12, pady=10)
+        bb_inner.pack(fill="x", padx=14, pady=12)
 
         self.selection_summary_lbl = ctk.CTkLabel(
             bb_inner,
             text="",
-            font=("Segoe UI", 11, "bold"),
-            text_color=("#2563EB", "#60A5FA"),
+            font=("Segoe UI", 12, "bold"),
+            text_color=("#1D4ED8", "#60A5FA"),
             anchor="w",
-            wraplength=520,
+            wraplength=540,
             justify="left"
         )
         self.selection_summary_lbl.pack(side="left", fill="x", expand=True)
@@ -266,91 +268,93 @@ class FormatPickerDialog(ctk.CTkToplevel):
 
         ctk.CTkButton(
             btn_row,
-            text="🔄 Tải Tự Động (Theo Preset)",
-            width=170,
-            height=34,
+            text="🔄 Tải Tự Động (Preset)",
+            width=180,
+            height=38,
             command=self.on_reset_auto,
-            fg_color="#64748B",
-            hover_color="#475569",
-            font=("Segoe UI", 10, "bold")
-        ).pack(side="left", padx=(0, 6))
+            fg_color="#475569",
+            hover_color="#334155",
+            font=("Segoe UI", 11, "bold")
+        ).pack(side="left", padx=(0, 8))
 
         ctk.CTkButton(
             btn_row,
             text="⚡ ÁP DỤNG LỰA CHỌN NÀY",
-            height=34,
+            height=38,
             command=self.on_confirm_selection,
-            fg_color="#10B981",
-            hover_color="#059669",
-            font=("Segoe UI", 11, "bold")
-        ).pack(side="left", padx=(0, 6))
+            fg_color="#059669",
+            hover_color="#047857",
+            font=("Segoe UI", 12, "bold")
+        ).pack(side="left", padx=(0, 8))
 
         ctk.CTkButton(
             btn_row,
             text="Đóng",
-            width=70,
-            height=34,
+            width=80,
+            height=38,
             command=self.destroy,
             fg_color=("#CBD5E1", "#334155"),
             hover_color=("#94A3B8", "#475569"),
-            text_color=("#1E293B", "#F8FAFC"),
-            font=("Segoe UI", 10)
+            text_color=("#0F172A", "#F8FAFC"),
+            font=("Segoe UI", 11, "bold")
         ).pack(side="left")
 
         self._update_summary_label()
+        self._refresh_row_highlights()
 
     def _build_video_tab(self):
         # Thanh công cụ trên đầu Tab Video
-        top_ctrl = ctk.CTkFrame(self.tab_video, fg_color=("#E2E8F0", "#1E293B"), corner_radius=6)
-        top_ctrl.pack(fill="x", pady=(0, 6), padx=2)
+        top_ctrl = ctk.CTkFrame(self.tab_video, fg_color=("#EFF6FF", "#0F172A"), corner_radius=8, border_width=1, border_color=("#3B82F6", "#1D4ED8"))
+        top_ctrl.pack(fill="x", pady=(0, 8), padx=2)
 
         tc_inner = ctk.CTkFrame(top_ctrl, fg_color="transparent")
-        tc_inner.pack(fill="x", padx=8, pady=4)
+        tc_inner.pack(fill="x", padx=10, pady=6)
 
         self.chk_video = ctk.CTkCheckBox(
             tc_inner,
             text="☑️ TẢI LUỒNG VIDEO NÀY (Bỏ tích nếu bạn chỉ muốn tải riêng file Âm thanh)",
             variable=self.enable_video_var,
             command=self._on_enable_video_toggled,
-            font=("Segoe UI", 10, "bold"),
-            text_color=("#1E293B", "#F8FAFC")
+            font=("Segoe UI", 11, "bold"),
+            text_color=("#0F172A", "#F8FAFC")
         )
         self.chk_video.pack(side="left")
 
         ctk.CTkButton(
             tc_inner,
             text="✕ Bỏ chọn Video",
-            width=110,
-            height=24,
+            width=120,
+            height=28,
             command=self.deselect_video,
-            fg_color="#EF4444",
-            hover_color="#DC2626",
-            font=("Segoe UI", 9, "bold")
+            fg_color="#DC2626",
+            hover_color="#B91C1C",
+            font=("Segoe UI", 10, "bold")
         ).pack(side="right")
 
         # Header bảng
-        hdr = ctk.CTkFrame(self.tab_video, height=26, fg_color=("#CBD5E1", "#334155"), corner_radius=4)
+        hdr = ctk.CTkFrame(self.tab_video, height=30, fg_color=("#CBD5E1", "#334155"), corner_radius=6)
         hdr.pack(fill="x", pady=(0, 4))
-        ctk.CTkLabel(hdr, text="Chọn", width=50, font=("Segoe UI", 9, "bold")).pack(side="left", padx=2)
-        ctk.CTkLabel(hdr, text="Format ID", width=70, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Độ phân giải", width=140, anchor="w", font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Bộ mã hóa (Codec)", width=130, anchor="w", font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Định dạng", width=70, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Bitrate", width=90, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Dung lượng", width=90, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Ghi chú", anchor="w", font=("Segoe UI", 9, "bold")).pack(side="left", fill="x", expand=True, padx=4)
+        ctk.CTkLabel(hdr, text="Chọn", width=55, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=2)
+        ctk.CTkLabel(hdr, text="Format ID", width=80, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Độ phân giải", width=150, anchor="w", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Bộ mã hóa (Codec)", width=140, anchor="w", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Định dạng", width=75, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Bitrate", width=95, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Dung lượng", width=95, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Ghi chú", anchor="w", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", fill="x", expand=True, padx=4)
 
         scroll = ctk.CTkScrollableFrame(self.tab_video, fg_color="transparent")
         scroll.pack(fill="both", expand=True)
 
         if not self.video_streams:
-            ctk.CTkLabel(scroll, text="Không có luồng Video riêng lẻ nào.", font=("Segoe UI", 11)).pack(pady=20)
+            ctk.CTkLabel(scroll, text="Không có luồng Video riêng lẻ nào.", font=("Segoe UI", 12)).pack(pady=20)
             return
 
         for s in self.video_streams:
             fid = s["id"]
-            row = ctk.CTkFrame(scroll, corner_radius=4, fg_color=("#F8FAFC", "#1E293B"))
+            row = ctk.CTkFrame(scroll, corner_radius=6, fg_color=("#F8FAFC", "#1E293B"), height=34)
             row.pack(fill="x", pady=2)
+            self.video_row_widgets[fid] = row
 
             rb = ctk.CTkRadioButton(
                 row,
@@ -362,19 +366,19 @@ class FormatPickerDialog(ctk.CTkToplevel):
             )
             rb.pack(side="left", padx=(10, 16))
 
-            l1 = ctk.CTkLabel(row, text=fid, width=70, font=("Consolas", 10, "bold"), text_color=("#2563EB", "#60A5FA"))
+            l1 = ctk.CTkLabel(row, text=fid, width=80, font=("Consolas", 11, "bold"), text_color=("#1D4ED8", "#60A5FA"))
             l1.pack(side="left", padx=4)
-            l2 = ctk.CTkLabel(row, text=s["resolution"], width=140, anchor="w", font=("Segoe UI", 10, "bold"))
+            l2 = ctk.CTkLabel(row, text=s["resolution"], width=150, anchor="w", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC"))
             l2.pack(side="left", padx=4)
-            l3 = ctk.CTkLabel(row, text=s["codec"], width=130, anchor="w", font=("Segoe UI", 10))
+            l3 = ctk.CTkLabel(row, text=s["codec"], width=140, anchor="w", font=("Segoe UI", 11), text_color=("#334155", "#E2E8F0"))
             l3.pack(side="left", padx=4)
-            l4 = ctk.CTkLabel(row, text=s["ext"].upper(), width=70, font=("Segoe UI", 10))
+            l4 = ctk.CTkLabel(row, text=s["ext"].upper(), width=75, font=("Segoe UI", 11, "bold"), text_color=("#475569", "#94A3B8"))
             l4.pack(side="left", padx=4)
-            l5 = ctk.CTkLabel(row, text=s["bitrate"], width=90, font=("Segoe UI", 10))
+            l5 = ctk.CTkLabel(row, text=s["bitrate"], width=95, font=("Segoe UI", 11), text_color=("#334155", "#E2E8F0"))
             l5.pack(side="left", padx=4)
-            l6 = ctk.CTkLabel(row, text=s["size"], width=90, font=("Segoe UI", 10, "bold"), text_color=("#10B981", "#34D399"))
+            l6 = ctk.CTkLabel(row, text=s["size"], width=95, font=("Segoe UI", 11, "bold"), text_color=("#059669", "#34D399"))
             l6.pack(side="left", padx=4)
-            l7 = ctk.CTkLabel(row, text=s["note"], anchor="w", font=("Segoe UI", 9), text_color=("#64748B", "#94A3B8"))
+            l7 = ctk.CTkLabel(row, text=s["note"], anchor="w", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"))
             l7.pack(side="left", fill="x", expand=True, padx=4)
 
             for w in (row, l1, l2, l3, l4, l5, l6, l7):
@@ -382,56 +386,57 @@ class FormatPickerDialog(ctk.CTkToplevel):
 
     def _build_audio_tab(self):
         # Thanh công cụ trên đầu Tab Audio
-        top_ctrl = ctk.CTkFrame(self.tab_audio, fg_color=("#E2E8F0", "#1E293B"), corner_radius=6)
-        top_ctrl.pack(fill="x", pady=(0, 6), padx=2)
+        top_ctrl = ctk.CTkFrame(self.tab_audio, fg_color=("#EFF6FF", "#0F172A"), corner_radius=8, border_width=1, border_color=("#3B82F6", "#1D4ED8"))
+        top_ctrl.pack(fill="x", pady=(0, 8), padx=2)
 
         tc_inner = ctk.CTkFrame(top_ctrl, fg_color="transparent")
-        tc_inner.pack(fill="x", padx=8, pady=4)
+        tc_inner.pack(fill="x", padx=10, pady=6)
 
         self.chk_audio = ctk.CTkCheckBox(
             tc_inner,
             text="☑️ TẢI LUỒNG ÂM THANH NÀY (Bỏ tích nếu bạn chỉ muốn tải Video không tiếng)",
             variable=self.enable_audio_var,
             command=self._on_enable_audio_toggled,
-            font=("Segoe UI", 10, "bold"),
-            text_color=("#1E293B", "#F8FAFC")
+            font=("Segoe UI", 11, "bold"),
+            text_color=("#0F172A", "#F8FAFC")
         )
         self.chk_audio.pack(side="left")
 
         ctk.CTkButton(
             tc_inner,
             text="✕ Bỏ chọn Audio",
-            width=110,
-            height=24,
+            width=120,
+            height=28,
             command=self.deselect_audio,
-            fg_color="#EF4444",
-            hover_color="#DC2626",
-            font=("Segoe UI", 9, "bold")
+            fg_color="#DC2626",
+            hover_color="#B91C1C",
+            font=("Segoe UI", 10, "bold")
         ).pack(side="right")
 
         # Header bảng
-        hdr = ctk.CTkFrame(self.tab_audio, height=26, fg_color=("#CBD5E1", "#334155"), corner_radius=4)
+        hdr = ctk.CTkFrame(self.tab_audio, height=30, fg_color=("#CBD5E1", "#334155"), corner_radius=6)
         hdr.pack(fill="x", pady=(0, 4))
-        ctk.CTkLabel(hdr, text="Chọn", width=50, font=("Segoe UI", 9, "bold")).pack(side="left", padx=2)
-        ctk.CTkLabel(hdr, text="Format ID", width=70, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Chất lượng Bitrate", width=130, anchor="w", font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Bộ mã hóa (Codec)", width=130, anchor="w", font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Định dạng", width=70, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Sample Rate", width=90, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Ngôn ngữ", width=120, anchor="w", font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Dung lượng", width=90, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Chọn", width=55, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=2)
+        ctk.CTkLabel(hdr, text="Format ID", width=80, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Chất lượng Bitrate", width=140, anchor="w", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Bộ mã hóa (Codec)", width=140, anchor="w", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Định dạng", width=75, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Sample Rate", width=95, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Ngôn ngữ", width=130, anchor="w", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Dung lượng", width=95, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
 
         scroll = ctk.CTkScrollableFrame(self.tab_audio, fg_color="transparent")
         scroll.pack(fill="both", expand=True)
 
         if not self.audio_streams:
-            ctk.CTkLabel(scroll, text="Không có luồng Âm thanh riêng lẻ nào.", font=("Segoe UI", 11)).pack(pady=20)
+            ctk.CTkLabel(scroll, text="Không có luồng Âm thanh riêng lẻ nào.", font=("Segoe UI", 12)).pack(pady=20)
             return
 
         for s in self.audio_streams:
             fid = s["id"]
-            row = ctk.CTkFrame(scroll, corner_radius=4, fg_color=("#F8FAFC", "#1E293B"))
+            row = ctk.CTkFrame(scroll, corner_radius=6, fg_color=("#F8FAFC", "#1E293B"), height=34)
             row.pack(fill="x", pady=2)
+            self.audio_row_widgets[fid] = row
 
             rb = ctk.CTkRadioButton(
                 row,
@@ -443,19 +448,19 @@ class FormatPickerDialog(ctk.CTkToplevel):
             )
             rb.pack(side="left", padx=(10, 16))
 
-            l1 = ctk.CTkLabel(row, text=fid, width=70, font=("Consolas", 10, "bold"), text_color=("#2563EB", "#60A5FA"))
+            l1 = ctk.CTkLabel(row, text=fid, width=80, font=("Consolas", 11, "bold"), text_color=("#1D4ED8", "#60A5FA"))
             l1.pack(side="left", padx=4)
-            l2 = ctk.CTkLabel(row, text=s["bitrate"], width=130, anchor="w", font=("Segoe UI", 10, "bold"))
+            l2 = ctk.CTkLabel(row, text=s["bitrate"], width=140, anchor="w", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC"))
             l2.pack(side="left", padx=4)
-            l3 = ctk.CTkLabel(row, text=s["codec"], width=130, anchor="w", font=("Segoe UI", 10))
+            l3 = ctk.CTkLabel(row, text=s["codec"], width=140, anchor="w", font=("Segoe UI", 11), text_color=("#334155", "#E2E8F0"))
             l3.pack(side="left", padx=4)
-            l4 = ctk.CTkLabel(row, text=s["ext"].upper(), width=70, font=("Segoe UI", 10))
+            l4 = ctk.CTkLabel(row, text=s["ext"].upper(), width=75, font=("Segoe UI", 11, "bold"), text_color=("#475569", "#94A3B8"))
             l4.pack(side="left", padx=4)
-            l5 = ctk.CTkLabel(row, text=s["sample_rate"], width=90, font=("Segoe UI", 10))
+            l5 = ctk.CTkLabel(row, text=s["sample_rate"], width=95, font=("Segoe UI", 11), text_color=("#334155", "#E2E8F0"))
             l5.pack(side="left", padx=4)
-            l6 = ctk.CTkLabel(row, text=s["language"], width=120, anchor="w", font=("Segoe UI", 10))
+            l6 = ctk.CTkLabel(row, text=s["language"], width=130, anchor="w", font=("Segoe UI", 11), text_color=("#334155", "#E2E8F0"))
             l6.pack(side="left", padx=4)
-            l7 = ctk.CTkLabel(row, text=s["size"], width=90, font=("Segoe UI", 10, "bold"), text_color=("#10B981", "#34D399"))
+            l7 = ctk.CTkLabel(row, text=s["size"], width=95, font=("Segoe UI", 11, "bold"), text_color=("#059669", "#34D399"))
             l7.pack(side="left", padx=4)
 
             for w in (row, l1, l2, l3, l4, l5, l6, l7):
@@ -463,45 +468,46 @@ class FormatPickerDialog(ctk.CTkToplevel):
 
     def _build_combined_tab(self):
         # Thanh công cụ trên đầu Tab Combined
-        top_ctrl = ctk.CTkFrame(self.tab_comb, fg_color=("#E2E8F0", "#1E293B"), corner_radius=6)
-        top_ctrl.pack(fill="x", pady=(0, 6), padx=2)
+        top_ctrl = ctk.CTkFrame(self.tab_comb, fg_color=("#EFF6FF", "#0F172A"), corner_radius=8, border_width=1, border_color=("#3B82F6", "#1D4ED8"))
+        top_ctrl.pack(fill="x", pady=(0, 8), padx=2)
 
         tc_inner = ctk.CTkFrame(top_ctrl, fg_color="transparent")
-        tc_inner.pack(fill="x", padx=8, pady=4)
+        tc_inner.pack(fill="x", padx=10, pady=6)
 
-        ctk.CTkLabel(tc_inner, text="🎬 Các luồng chứa sẵn cả Video + Âm thanh gốc", font=("Segoe UI", 10, "bold")).pack(side="left")
+        ctk.CTkLabel(tc_inner, text="🎬 Các luồng chứa sẵn cả Video + Âm thanh gốc", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left")
 
         ctk.CTkButton(
             tc_inner,
             text="✕ Bỏ chọn Luồng kết hợp",
-            width=160,
-            height=24,
+            width=175,
+            height=28,
             command=self.deselect_combined,
-            fg_color="#EF4444",
-            hover_color="#DC2626",
-            font=("Segoe UI", 9, "bold")
+            fg_color="#DC2626",
+            hover_color="#B91C1C",
+            font=("Segoe UI", 10, "bold")
         ).pack(side="right")
 
-        hdr = ctk.CTkFrame(self.tab_comb, height=26, fg_color=("#CBD5E1", "#334155"), corner_radius=4)
+        hdr = ctk.CTkFrame(self.tab_comb, height=30, fg_color=("#CBD5E1", "#334155"), corner_radius=6)
         hdr.pack(fill="x", pady=(0, 4))
-        ctk.CTkLabel(hdr, text="Chọn", width=50, font=("Segoe UI", 9, "bold")).pack(side="left", padx=2)
-        ctk.CTkLabel(hdr, text="Format ID", width=70, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Độ phân giải", width=140, anchor="w", font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Bộ mã hóa", width=180, anchor="w", font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Định dạng", width=70, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(hdr, text="Dung lượng", width=90, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Chọn", width=55, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=2)
+        ctk.CTkLabel(hdr, text="Format ID", width=80, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Độ phân giải", width=150, anchor="w", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Bộ mã hóa", width=200, anchor="w", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Định dạng", width=75, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
+        ctk.CTkLabel(hdr, text="Dung lượng", width=95, font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=4)
 
         scroll = ctk.CTkScrollableFrame(self.tab_comb, fg_color="transparent")
         scroll.pack(fill="both", expand=True)
 
         if not self.combined_streams:
-            ctk.CTkLabel(scroll, text="Không có luồng Kết hợp sẵn nào (Video HD/4K đều được tách riêng luồng trên YouTube).", font=("Segoe UI", 11)).pack(pady=20)
+            ctk.CTkLabel(scroll, text="Không có luồng Kết hợp sẵn nào (Video HD/4K đều được tách riêng luồng trên YouTube).", font=("Segoe UI", 12)).pack(pady=20)
             return
 
         for s in self.combined_streams:
             fid = s["id"]
-            row = ctk.CTkFrame(scroll, corner_radius=4, fg_color=("#F8FAFC", "#1E293B"))
+            row = ctk.CTkFrame(scroll, corner_radius=6, fg_color=("#F8FAFC", "#1E293B"), height=34)
             row.pack(fill="x", pady=2)
+            self.combined_row_widgets[fid] = row
 
             rb = ctk.CTkRadioButton(
                 row,
@@ -513,15 +519,15 @@ class FormatPickerDialog(ctk.CTkToplevel):
             )
             rb.pack(side="left", padx=(10, 16))
 
-            l1 = ctk.CTkLabel(row, text=fid, width=70, font=("Consolas", 10, "bold"), text_color=("#2563EB", "#60A5FA"))
+            l1 = ctk.CTkLabel(row, text=fid, width=80, font=("Consolas", 11, "bold"), text_color=("#1D4ED8", "#60A5FA"))
             l1.pack(side="left", padx=4)
-            l2 = ctk.CTkLabel(row, text=s["resolution"], width=140, anchor="w", font=("Segoe UI", 10, "bold"))
+            l2 = ctk.CTkLabel(row, text=s["resolution"], width=150, anchor="w", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC"))
             l2.pack(side="left", padx=4)
-            l3 = ctk.CTkLabel(row, text=s["codec"], width=180, anchor="w", font=("Segoe UI", 10))
+            l3 = ctk.CTkLabel(row, text=s["codec"], width=200, anchor="w", font=("Segoe UI", 11), text_color=("#334155", "#E2E8F0"))
             l3.pack(side="left", padx=4)
-            l4 = ctk.CTkLabel(row, text=s["ext"].upper(), width=70, font=("Segoe UI", 10))
+            l4 = ctk.CTkLabel(row, text=s["ext"].upper(), width=75, font=("Segoe UI", 11, "bold"), text_color=("#475569", "#94A3B8"))
             l4.pack(side="left", padx=4)
-            l5 = ctk.CTkLabel(row, text=s["size"], width=90, font=("Segoe UI", 10, "bold"), text_color=("#10B981", "#34D399"))
+            l5 = ctk.CTkLabel(row, text=s["size"], width=95, font=("Segoe UI", 11, "bold"), text_color=("#059669", "#34D399"))
             l5.pack(side="left", padx=4)
 
             for w in (row, l1, l2, l3, l4, l5):
@@ -530,6 +536,30 @@ class FormatPickerDialog(ctk.CTkToplevel):
     # =========================================================================
     # CÁC HÀM XỬ LÝ SỰ KIỆN TƯƠNG TÁC (TOGGLE / CLICK / CHECKBOX)
     # =========================================================================
+    def _refresh_row_highlights(self):
+        """Cập nhật viền và màu nền tương phản cao cho các dòng đang được chọn."""
+        sel_v = self.selected_video_id.get() if self.enable_video_var.get() else ""
+        sel_a = self.selected_audio_id.get() if self.enable_audio_var.get() else ""
+        sel_c = self.selected_combined_id.get()
+
+        for fid, row in self.video_row_widgets.items():
+            if fid == sel_v:
+                row.configure(fg_color=("#DBEAFE", "#1E3A8A"), border_width=1.5, border_color="#3B82F6")
+            else:
+                row.configure(fg_color=("#F8FAFC", "#1E293B"), border_width=0)
+
+        for fid, row in self.audio_row_widgets.items():
+            if fid == sel_a:
+                row.configure(fg_color=("#EDE9FE", "#4C1D95"), border_width=1.5, border_color="#8B5CF6")
+            else:
+                row.configure(fg_color=("#F8FAFC", "#1E293B"), border_width=0)
+
+        for fid, row in self.combined_row_widgets.items():
+            if fid == sel_c:
+                row.configure(fg_color=("#DCFCE7", "#064E3B"), border_width=1.5, border_color="#10B981")
+            else:
+                row.configure(fg_color=("#F8FAFC", "#1E293B"), border_width=0)
+
     def _on_enable_video_toggled(self):
         if self.enable_video_var.get():
             if not self.selected_video_id.get() and self.video_streams:
@@ -538,6 +568,7 @@ class FormatPickerDialog(ctk.CTkToplevel):
         else:
             self.selected_video_id.set("")
         self._update_summary_label()
+        self._refresh_row_highlights()
 
     def _on_enable_audio_toggled(self):
         if self.enable_audio_var.get():
@@ -547,6 +578,7 @@ class FormatPickerDialog(ctk.CTkToplevel):
         else:
             self.selected_audio_id.set("")
         self._update_summary_label()
+        self._refresh_row_highlights()
 
     def _on_video_row_clicked(self, fid: str):
         self.selected_combined_id.set("")
@@ -559,6 +591,7 @@ class FormatPickerDialog(ctk.CTkToplevel):
             self.selected_video_id.set(fid)
             self.enable_video_var.set(True)
         self._update_summary_label()
+        self._refresh_row_highlights()
 
     def _on_audio_row_clicked(self, fid: str):
         self.selected_combined_id.set("")
@@ -571,6 +604,7 @@ class FormatPickerDialog(ctk.CTkToplevel):
             self.selected_audio_id.set(fid)
             self.enable_audio_var.set(True)
         self._update_summary_label()
+        self._refresh_row_highlights()
 
     def _on_combined_row_clicked(self, fid: str):
         if self.selected_combined_id.get() == fid:
@@ -582,20 +616,24 @@ class FormatPickerDialog(ctk.CTkToplevel):
         self.selected_video_id.set("")
         self.selected_audio_id.set("")
         self._update_summary_label()
+        self._refresh_row_highlights()
 
     def deselect_video(self):
         self.selected_video_id.set("")
         self.enable_video_var.set(False)
         self._update_summary_label()
+        self._refresh_row_highlights()
 
     def deselect_audio(self):
         self.selected_audio_id.set("")
         self.enable_audio_var.set(False)
         self._update_summary_label()
+        self._refresh_row_highlights()
 
     def deselect_combined(self):
         self.selected_combined_id.set("")
         self._update_summary_label()
+        self._refresh_row_highlights()
 
     def _update_summary_label(self):
         v_active = self.enable_video_var.get() and bool(self.selected_video_id.get())
@@ -611,7 +649,7 @@ class FormatPickerDialog(ctk.CTkToplevel):
             c_desc = f"{c_info['resolution']} ({c_info['codec']})" if c_info else c_id
             self.selection_summary_lbl.configure(
                 text=f"🎯 Đang chọn: Luồng kết hợp sẵn [{c_id}: {c_desc}]",
-                text_color=("#2563EB", "#60A5FA")
+                text_color=("#059669", "#34D399")
             )
         elif v_active and a_active:
             v_info = next((s for s in self.video_streams if s["id"] == v_id), None)
@@ -620,22 +658,22 @@ class FormatPickerDialog(ctk.CTkToplevel):
             a_desc = f"{a_info['bitrate']} ({a_info['codec']})" if a_info else a_id
 
             self.selection_summary_lbl.configure(
-                text=f"🎯 Đang chọn: Video [{v_id}: {v_desc}]  +  Audio [{a_id}: {a_desc}]  👉 Ghép luồng: {v_id}+{a_id}",
-                text_color=("#10B981", "#34D399")
+                text=f"🎯 Đang chọn: Video [{v_id}: {v_desc}]  +  Audio [{a_id}: {a_desc}]  👉 Ghép: {v_id}+{a_id}",
+                text_color=("#1D4ED8", "#60A5FA")
             )
         elif v_active and not a_active:
             v_info = next((s for s in self.video_streams if s["id"] == v_id), None)
             v_desc = f"{v_info['resolution']} ({v_info['codec']})" if v_info else v_id
             self.selection_summary_lbl.configure(
                 text=f"🎯 Đang chọn: CHỈ TẢI VIDEO [{v_id}: {v_desc}] (Không có tiếng)",
-                text_color=("#F59E0B", "#FBBF24")
+                text_color=("#D97706", "#FBBF24")
             )
         elif a_active and not v_active:
             a_info = next((s for s in self.audio_streams if s["id"] == a_id), None)
             a_desc = f"{a_info['bitrate']} ({a_info['codec']})" if a_info else a_id
             self.selection_summary_lbl.configure(
                 text=f"🎯 Đang chọn: CHỈ TẢI ÂM THANH [{a_id}: {a_desc}] (Không có video)",
-                text_color=("#8B5CF6", "#A78BFA")
+                text_color=("#7C3AED", "#A78BFA")
             )
         else:
             self.selection_summary_lbl.configure(

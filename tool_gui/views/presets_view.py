@@ -27,40 +27,40 @@ class PresetsView(ctk.CTkFrame):
         main_container = ctk.CTkFrame(self, fg_color="transparent")
         main_container.pack(fill="both", expand=True, padx=15, pady=12)
 
-        # 1. THANH TIÊU ĐỀ & CHỌN PRESET
-        top_card = ctk.CTkFrame(main_container, corner_radius=10)
+        top_card = ctk.CTkFrame(main_container, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         top_card.pack(fill="x", pady=(0, 10))
 
         top_inner = ctk.CTkFrame(top_card, fg_color="transparent")
-        top_inner.pack(fill="x", padx=15, pady=12)
+        top_inner.pack(fill="x", padx=16, pady=12)
 
-        hdr_row = ctk.CTkFrame(top_inner, fg_color="transparent")
-        hdr_row.pack(fill="x", pady=(0, 6))
+        # Tiêu đề & Nút khôi phục mặc định
+        title_row = ctk.CTkFrame(top_inner, fg_color="transparent")
+        title_row.pack(fill="x", pady=(0, 4))
 
         ctk.CTkLabel(
-            hdr_row,
-            text="⚡ QUẢN LÝ CẤU HÌNH SẴN (DOWNLOAD PRESETS)",
+            title_row,
+            text="⚡ Quản Lý Cấu Hình Tải Sẵn (Presets)",
             font=("Segoe UI", 15, "bold"),
-            text_color=("#2563EB", "#38BDF8")
+            text_color=("#1D4ED8", "#60A5FA")
         ).pack(side="left")
 
         self.btn_reset_defaults = ctk.CTkButton(
-            hdr_row,
-            text="🔄 Khôi phục Mặc định",
-            width=140,
-            height=28,
+            title_row,
+            text="🔄 Khôi Phục Mặc Định",
+            width=160,
+            height=30,
             command=self.on_reset_defaults_clicked,
-            fg_color="#64748B",
-            hover_color="#475569",
-            font=("Segoe UI", 10)
+            fg_color="#475569",
+            hover_color="#334155",
+            font=("Segoe UI", 11, "bold")
         )
         self.btn_reset_defaults.pack(side="right")
 
         ctk.CTkLabel(
             top_inner,
             text="Tạo và tùy biến các cấu hình tải nhanh chuyên sâu (Định dạng, Độ phân giải, Đa luồng tải, Phụ đề, Metadata, Tách Chapter) để áp dụng 1-click khi tải đơn hoặc tải hàng loạt.",
-            font=("Segoe UI", 10),
-            text_color=("#64748B", "#94A3B8"),
+            font=("Segoe UI", 11),
+            text_color=("#475569", "#94A3B8"),
             wraplength=780,
             justify="left"
         ).pack(anchor="w", pady=(0, 10))
@@ -69,38 +69,38 @@ class PresetsView(ctk.CTkFrame):
         sel_row = ctk.CTkFrame(top_inner, fg_color="transparent")
         sel_row.pack(fill="x")
 
-        ctk.CTkLabel(sel_row, text="Chọn Preset đang lưu:", font=("Segoe UI", 11, "bold")).pack(side="left", padx=(0, 8))
+        ctk.CTkLabel(sel_row, text="Chọn Preset đang lưu:", font=("Segoe UI", 12, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(side="left", padx=(0, 8))
 
         self.preset_select_combo = ctk.CTkComboBox(
             sel_row,
             values=[],
             command=self.on_preset_selected_in_combo,
-            height=32,
-            font=("Segoe UI", 11)
+            height=34,
+            font=("Segoe UI", 12)
         )
         self.preset_select_combo.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
         self.btn_new = ctk.CTkButton(
             sel_row,
             text="➕ Tạo Preset Mới",
-            width=120,
-            height=32,
+            width=140,
+            height=34,
             command=self.on_new_preset_clicked,
-            fg_color="#3B82F6",
-            hover_color="#2563EB",
-            font=("Segoe UI", 11, "bold")
+            fg_color="#2563EB",
+            hover_color="#1D4ED8",
+            font=("Segoe UI", 12, "bold")
         )
         self.btn_new.pack(side="left", padx=(0, 6))
 
         self.btn_delete = ctk.CTkButton(
             sel_row,
             text="🗑️ Xóa",
-            width=70,
-            height=32,
+            width=80,
+            height=34,
             command=self.on_delete_preset_clicked,
-            fg_color="#EF4444",
-            hover_color="#DC2626",
-            font=("Segoe UI", 11, "bold")
+            fg_color="#DC2626",
+            hover_color="#B91C1C",
+            font=("Segoe UI", 12, "bold")
         )
         self.btn_delete.pack(side="left")
 
@@ -115,24 +115,24 @@ class PresetsView(ctk.CTkFrame):
         # =====================================================================
         # CỘT TRÁI: CÀI ĐẶT CƠ BẢN & ĐỊNH DẠNG
         # =====================================================================
-        left_card = ctk.CTkFrame(grid_cols, corner_radius=10)
+        left_card = ctk.CTkFrame(grid_cols, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         left_card.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
 
         l_in = ctk.CTkFrame(left_card, fg_color="transparent")
-        l_in.pack(fill="both", expand=True, padx=15, pady=12)
+        l_in.pack(fill="both", expand=True, padx=16, pady=14)
 
-        ctk.CTkLabel(l_in, text="⚙️ CÀI ĐẶT CƠ BẢN & ĐỊNH DẠNG", font=("Segoe UI", 12, "bold"), text_color=("#2563EB", "#60A5FA")).pack(anchor="w", pady=(0, 8))
+        ctk.CTkLabel(l_in, text="⚙️ CÀI ĐẶT CƠ BẢN & ĐỊNH DẠNG", font=("Segoe UI", 13, "bold"), text_color=("#1D4ED8", "#60A5FA")).pack(anchor="w", pady=(0, 10))
 
-        ctk.CTkLabel(l_in, text="Tên cấu hình Preset:", font=("Segoe UI", 10, "bold")).pack(anchor="w")
-        self.name_entry = ctk.CTkEntry(l_in, font=("Segoe UI", 11), height=30, placeholder_text="VD: 🎵 Nhạc MP3 320k Studio")
+        ctk.CTkLabel(l_in, text="Tên cấu hình Preset:", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(anchor="w")
+        self.name_entry = ctk.CTkEntry(l_in, font=("Segoe UI", 11), height=32, placeholder_text="VD: 🎵 Nhạc MP3 320k Studio")
         self.name_entry.pack(fill="x", pady=(2, 8))
 
-        ctk.CTkLabel(l_in, text="Mô tả / Ghi chú:", font=("Segoe UI", 10)).pack(anchor="w")
-        self.desc_entry = ctk.CTkEntry(l_in, font=("Segoe UI", 10), height=28, placeholder_text="Mô tả ngắn về mục đích cấu hình này...")
+        ctk.CTkLabel(l_in, text="Mô tả / Ghi chú:", font=("Segoe UI", 11), text_color=("#475569", "#94A3B8")).pack(anchor="w")
+        self.desc_entry = ctk.CTkEntry(l_in, font=("Segoe UI", 11), height=30, placeholder_text="Mô tả ngắn về mục đích cấu hình này...")
         self.desc_entry.pack(fill="x", pady=(2, 8))
 
-        ctk.CTkLabel(l_in, text="Loại nội dung tải:", font=("Segoe UI", 10, "bold")).pack(anchor="w")
-        self.mode_seg = ctk.CTkSegmentedButton(l_in, values=["🎬 Video + Âm thanh", "🎵 Chỉ lấy Âm thanh"], command=self.on_mode_changed, height=28)
+        ctk.CTkLabel(l_in, text="Loại nội dung tải:", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(anchor="w")
+        self.mode_seg = ctk.CTkSegmentedButton(l_in, values=["🎬 Video + Âm thanh", "🎵 Chỉ lấy Âm thanh"], command=self.on_mode_changed, height=32, font=("Segoe UI", 11, "bold"))
         self.mode_seg.set("🎬 Video + Âm thanh")
         self.mode_seg.pack(fill="x", pady=(2, 8))
 
@@ -140,8 +140,8 @@ class PresetsView(ctk.CTkFrame):
         grid_l.pack(fill="x", pady=(0, 6))
         grid_l.grid_columnconfigure((0, 1), weight=1)
 
-        ctk.CTkLabel(grid_l, text="Độ phân giải tối đa:", font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w")
-        ctk.CTkLabel(grid_l, text="Định dạng Video Container:", font=("Segoe UI", 10)).grid(row=0, column=1, sticky="w", padx=(6, 0))
+        ctk.CTkLabel(grid_l, text="Độ phân giải tối đa:", font=("Segoe UI", 11, "bold")).grid(row=0, column=0, sticky="w")
+        ctk.CTkLabel(grid_l, text="Định dạng Video Container:", font=("Segoe UI", 11, "bold")).grid(row=0, column=1, sticky="w", padx=(6, 0))
 
         self.quality_combo = ctk.CTkComboBox(grid_l, values=[
             "🌟 Tốt nhất có thể (Gốc)",
@@ -156,7 +156,7 @@ class PresetsView(ctk.CTkFrame):
             "⚡ Thấp 360p",
             "⚡ 240p",
             "⚡ 144p"
-        ], height=28)
+        ], height=30, font=("Segoe UI", 11))
         self.quality_combo.grid(row=1, column=0, sticky="ew", padx=(0, 3), pady=(0, 6))
 
         self.fmt_combo = ctk.CTkComboBox(grid_l, values=[
@@ -170,11 +170,11 @@ class PresetsView(ctk.CTkFrame):
             "3GP (Di động cổ điển)",
             "OGV (Ogg Video)",
             "WMV (Windows Media)"
-        ], height=28)
+        ], height=30, font=("Segoe UI", 11))
         self.fmt_combo.grid(row=1, column=1, sticky="ew", padx=(3, 0), pady=(0, 6))
 
-        ctk.CTkLabel(grid_l, text="Bitrate Âm thanh (Audio Codec):", font=("Segoe UI", 10)).grid(row=2, column=0, sticky="w")
-        ctk.CTkLabel(grid_l, text="Định dạng Âm thanh (Audio Format):", font=("Segoe UI", 10)).grid(row=2, column=1, sticky="w", padx=(6, 0))
+        ctk.CTkLabel(grid_l, text="Bitrate Âm thanh (Audio Codec):", font=("Segoe UI", 11, "bold")).grid(row=2, column=0, sticky="w")
+        ctk.CTkLabel(grid_l, text="Định dạng Âm thanh (Audio Format):", font=("Segoe UI", 11, "bold")).grid(row=2, column=1, sticky="w", padx=(6, 0))
 
         self.audio_combo = ctk.CTkComboBox(grid_l, values=[
             "MP3 - 320 kbps (Cực cao - Studio Master)",
@@ -190,7 +190,7 @@ class PresetsView(ctk.CTkFrame):
             "ALAC (Apple Lossless)",
             "WMA (Windows Media)",
             "AIFF (Apple PCM)"
-        ], height=28)
+        ], height=30, font=("Segoe UI", 11))
         self.audio_combo.grid(row=3, column=0, sticky="ew", padx=(0, 3))
 
         self.audio_fmt_combo = ctk.CTkComboBox(grid_l, values=[
@@ -203,32 +203,32 @@ class PresetsView(ctk.CTkFrame):
             "ALAC (Apple Lossless)",
             "WMA",
             "AIFF"
-        ], height=28)
+        ], height=30, font=("Segoe UI", 11))
         self.audio_fmt_combo.grid(row=3, column=1, sticky="ew", padx=(3, 0))
 
         # =====================================================================
         # CỘT PHẢI: CÀI ĐẶT NÂNG CAO & CHUYÊN SÂU
         # =====================================================================
-        right_card = ctk.CTkFrame(grid_cols, corner_radius=10)
+        right_card = ctk.CTkFrame(grid_cols, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         right_card.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
 
         r_in = ctk.CTkFrame(right_card, fg_color="transparent")
-        r_in.pack(fill="both", expand=True, padx=15, pady=12)
+        r_in.pack(fill="both", expand=True, padx=16, pady=14)
 
-        ctk.CTkLabel(r_in, text="🚀 CÀI ĐẶT NÂNG CAO & CHUYÊN SÂU", font=("Segoe UI", 12, "bold"), text_color=("#2563EB", "#60A5FA")).pack(anchor="w", pady=(0, 8))
+        ctk.CTkLabel(r_in, text="🚀 CÀI ĐẶT NÂNG CAO & CHUYÊN SÂU", font=("Segoe UI", 13, "bold"), text_color=("#1D4ED8", "#60A5FA")).pack(anchor="w", pady=(0, 10))
 
         # Tốc độ & Luồng tải
         grid_r1 = ctk.CTkFrame(r_in, fg_color="transparent")
         grid_r1.pack(fill="x", pady=(0, 6))
         grid_r1.grid_columnconfigure((0, 1), weight=1)
 
-        ctk.CTkLabel(grid_r1, text="Số luồng tải phân đoạn:", font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w")
-        ctk.CTkLabel(grid_r1, text="Giới hạn tốc độ tải:", font=("Segoe UI", 10)).grid(row=0, column=1, sticky="w", padx=(6, 0))
+        ctk.CTkLabel(grid_r1, text="Số luồng tải phân đoạn:", font=("Segoe UI", 11, "bold")).grid(row=0, column=0, sticky="w")
+        ctk.CTkLabel(grid_r1, text="Giới hạn tốc độ tải:", font=("Segoe UI", 11, "bold")).grid(row=0, column=1, sticky="w", padx=(6, 0))
 
-        self.threads_combo = ctk.CTkComboBox(grid_r1, values=["4 luồng (Chuẩn)", "8 luồng (Siêu tốc)", "16 luồng (Cực đại)", "2 luồng (Ổn định)", "1 luồng (Đơn)"], height=28)
+        self.threads_combo = ctk.CTkComboBox(grid_r1, values=["4 luồng (Chuẩn)", "8 luồng (Siêu tốc)", "16 luồng (Cực đại)", "2 luồng (Ổn định)", "1 luồng (Đơn)"], height=30, font=("Segoe UI", 11))
         self.threads_combo.grid(row=1, column=0, sticky="ew", padx=(0, 3), pady=(0, 6))
 
-        self.ratelimit_combo = ctk.CTkComboBox(grid_r1, values=["Không giới hạn (Tối đa)", "50 MB/s", "20 MB/s", "10 MB/s", "5 MB/s", "2 MB/s"], height=28)
+        self.ratelimit_combo = ctk.CTkComboBox(grid_r1, values=["Không giới hạn (Tối đa)", "50 MB/s", "20 MB/s", "10 MB/s", "5 MB/s", "2 MB/s"], height=30, font=("Segoe UI", 11))
         self.ratelimit_combo.grid(row=1, column=1, sticky="ew", padx=(3, 0), pady=(0, 6))
 
         # Video Codec & FPS
@@ -236,8 +236,8 @@ class PresetsView(ctk.CTkFrame):
         grid_r2.pack(fill="x", pady=(0, 8))
         grid_r2.grid_columnconfigure((0, 1), weight=1)
 
-        ctk.CTkLabel(grid_r2, text="Bộ mã hóa Video (Codec):", font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w")
-        ctk.CTkLabel(grid_r2, text="Tùy chọn Khung hình (FPS):", font=("Segoe UI", 10)).grid(row=0, column=1, sticky="w", padx=(6, 0))
+        ctk.CTkLabel(grid_r2, text="Bộ mã hóa Video (Codec):", font=("Segoe UI", 11, "bold")).grid(row=0, column=0, sticky="w")
+        ctk.CTkLabel(grid_r2, text="Tùy chọn Khung hình (FPS):", font=("Segoe UI", 11, "bold")).grid(row=0, column=1, sticky="w", padx=(6, 0))
 
         self.codec_combo = ctk.CTkComboBox(grid_r2, values=[
             "Tự động (Tối ưu theo nguồn gốc)",
@@ -247,44 +247,44 @@ class PresetsView(ctk.CTkFrame):
             "AV1 (Codec thế hệ mới)",
             "ProRes (Chất lượng dựng phim)",
             "MPEG-4 (Thiết bị đời cũ)"
-        ], height=28)
+        ], height=30, font=("Segoe UI", 11))
         self.codec_combo.grid(row=1, column=0, sticky="ew", padx=(0, 3))
 
-        self.fps_combo = ctk.CTkComboBox(grid_r2, values=["60fps (Mượt mà)", "30fps (Tiêu chuẩn)", "Mặc định (Theo video gốc)"], height=28)
+        self.fps_combo = ctk.CTkComboBox(grid_r2, values=["60fps (Mượt mà)", "30fps (Tiêu chuẩn)", "Mặc định (Theo video gốc)"], height=30, font=("Segoe UI", 11))
         self.fps_combo.grid(row=1, column=1, sticky="ew", padx=(3, 0))
 
         # Phụ đề
-        sub_box = ctk.CTkFrame(r_in, fg_color=("#E2E8F0", "#1E293B"), corner_radius=6)
+        sub_box = ctk.CTkFrame(r_in, fg_color=("#EFF6FF", "#0F172A"), corner_radius=8, border_width=1, border_color=("#3B82F6", "#1D4ED8"))
         sub_box.pack(fill="x", pady=(0, 8))
         sub_in = ctk.CTkFrame(sub_box, fg_color="transparent")
-        sub_in.pack(fill="x", padx=10, pady=8)
+        sub_in.pack(fill="x", padx=12, pady=10)
 
-        self.sub_cb = ctk.CTkCheckBox(sub_in, text="💬 Tải & Nhúng Phụ Đề vào Video", font=("Segoe UI", 10, "bold"))
-        self.sub_cb.pack(anchor="w", pady=(0, 4))
+        self.sub_cb = ctk.CTkCheckBox(sub_in, text="💬 Tải & Nhúng Phụ Đề vào Video", font=("Segoe UI", 11, "bold"))
+        self.sub_cb.pack(anchor="w", pady=(0, 6))
 
         sub_sub_row = ctk.CTkFrame(sub_in, fg_color="transparent")
         sub_sub_row.pack(fill="x")
 
-        self.auto_sub_cb = ctk.CTkCheckBox(sub_sub_row, text="Tự động lấy Phụ đề AI / Auto-sub", font=("Segoe UI", 9))
-        self.auto_sub_cb.pack(side="left", padx=(0, 8))
+        self.auto_sub_cb = ctk.CTkCheckBox(sub_sub_row, text="Tự động lấy Phụ đề AI / Auto-sub", font=("Segoe UI", 10))
+        self.auto_sub_cb.pack(side="left", padx=(0, 10))
 
-        ctk.CTkLabel(sub_sub_row, text="Mã ngôn ngữ:", font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
-        self.sub_lang_entry = ctk.CTkEntry(sub_sub_row, width=80, height=24, font=("Consolas", 9), placeholder_text="vi,en")
+        ctk.CTkLabel(sub_sub_row, text="Mã ngôn ngữ:", font=("Segoe UI", 10, "bold")).pack(side="left", padx=(0, 4))
+        self.sub_lang_entry = ctk.CTkEntry(sub_sub_row, width=90, height=26, font=("Consolas", 10), placeholder_text="vi,en")
         self.sub_lang_entry.pack(side="left")
 
         # Metadata & Chapters
-        meta_box = ctk.CTkFrame(r_in, fg_color=("#E2E8F0", "#1E293B"), corner_radius=6)
+        meta_box = ctk.CTkFrame(r_in, fg_color=("#EFF6FF", "#0F172A"), corner_radius=8, border_width=1, border_color=("#3B82F6", "#1D4ED8"))
         meta_box.pack(fill="x", pady=(0, 8))
         meta_in = ctk.CTkFrame(meta_box, fg_color="transparent")
-        meta_in.pack(fill="x", padx=10, pady=8)
+        meta_in.pack(fill="x", padx=12, pady=10)
 
-        self.thumb_cb = ctk.CTkCheckBox(meta_in, text="🖼️ Nhúng Ảnh Bìa (Thumbnail) chất lượng cao", font=("Segoe UI", 10))
-        self.thumb_cb.pack(anchor="w", pady=(0, 3))
+        self.thumb_cb = ctk.CTkCheckBox(meta_in, text="🖼️ Nhúng Ảnh Bìa (Thumbnail) chất lượng cao", font=("Segoe UI", 11))
+        self.thumb_cb.pack(anchor="w", pady=(0, 4))
 
-        self.meta_cb = ctk.CTkCheckBox(meta_in, text="🏷️ Gắn Thẻ Metadata (Title, Artist, Album, Year, Description)", font=("Segoe UI", 10))
-        self.meta_cb.pack(anchor="w", pady=(0, 3))
+        self.meta_cb = ctk.CTkCheckBox(meta_in, text="🏷️ Gắn Thẻ Metadata (Title, Artist, Album, Year, Description)", font=("Segoe UI", 11))
+        self.meta_cb.pack(anchor="w", pady=(0, 4))
 
-        self.split_chap_cb = ctk.CTkCheckBox(meta_in, text="✂️ Tự động chia nhỏ tệp theo từng Chapter / Chương mục", font=("Segoe UI", 10))
+        self.split_chap_cb = ctk.CTkCheckBox(meta_in, text="✂️ Tự động chia nhỏ tệp theo từng Chapter / Chương mục", font=("Segoe UI", 11))
         self.split_chap_cb.pack(anchor="w")
 
         # NÚT LƯU PRESET TOÀN DIỆN

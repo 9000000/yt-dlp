@@ -81,8 +81,8 @@ class DownloadView(ctk.CTkFrame):
         self.universal_entry = ctk.CTkEntry(
             top_inner,
             placeholder_text="Dán link Video đơn, Playlist, Kênh, Trang web bất kỳ HOẶC nhập từ khóa tìm kiếm...",
-            font=("Segoe UI", 11),
-            height=34
+            font=("Segoe UI", 12),
+            height=38
         )
         self.universal_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
         self.universal_entry.bind("<Return>", lambda e: self.on_auto_detect_action())
@@ -92,24 +92,24 @@ class DownloadView(ctk.CTkFrame):
         paste_btn = ctk.CTkButton(
             top_inner,
             text="📋 Dán link",
-            width=80,
-            height=34,
+            width=90,
+            height=38,
             command=self.on_paste_universal,
-            fg_color="#64748B",
-            hover_color="#475569",
-            font=("Segoe UI", 11)
+            fg_color="#475569",
+            hover_color="#334155",
+            font=("Segoe UI", 12, "bold")
         )
         paste_btn.pack(side="left", padx=(0, 6))
 
         self.detect_btn = ctk.CTkButton(
             top_inner,
             text="⚡ Phân Tích Tự Động",
-            width=140,
-            height=34,
+            width=160,
+            height=38,
             command=self.on_auto_detect_action,
-            font=("Segoe UI", 11, "bold"),
-            fg_color="#3B82F6",
-            hover_color="#2563EB"
+            font=("Segoe UI", 12, "bold"),
+            fg_color="#2563EB",
+            hover_color="#1D4ED8"
         )
         self.detect_btn.pack(side="left")
 
@@ -123,8 +123,8 @@ class DownloadView(ctk.CTkFrame):
             switcher_card,
             values=["🎬 Tải Video Đơn", "📑 Tải Hàng Loạt & Danh Sách", "🌐 Trình Duyệt Web & Quét Video"],
             command=self.on_mode_switched,
-            height=32,
-            font=("Segoe UI", 11, "bold")
+            height=34,
+            font=("Segoe UI", 12, "bold")
         )
         self.mode_switcher.set("🎬 Tải Video Đơn")
         self.mode_switcher.pack(fill="x")
@@ -237,102 +237,102 @@ class DownloadView(ctk.CTkFrame):
         mid_grid.grid_rowconfigure(0, weight=1)
 
         # Cột Trái: Thông tin video đã phân tích
-        self.preview_card = ctk.CTkFrame(mid_grid, corner_radius=10, fg_color=("#F8FAFC", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
-        self.preview_card.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+        self.preview_card = ctk.CTkFrame(mid_grid, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
+        self.preview_card.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
 
         pv_head = ctk.CTkFrame(self.preview_card, fg_color="transparent")
-        pv_head.pack(fill="x", padx=10, pady=(8, 2))
-        ctk.CTkLabel(pv_head, text="🎬 Thông tin Video", font=("Segoe UI", 11, "bold"), text_color=("#2563EB", "#60A5FA")).pack(side="left")
-        self.status_badge = ctk.CTkLabel(pv_head, text="Chờ URL...", font=("Segoe UI", 9, "bold"), fg_color=("#E2E8F0", "#334155"), corner_radius=4, height=18, padx=5)
+        pv_head.pack(fill="x", padx=12, pady=(10, 4))
+        ctk.CTkLabel(pv_head, text="🎬 Thông tin Video", font=("Segoe UI", 12, "bold"), text_color=("#1D4ED8", "#60A5FA")).pack(side="left")
+        self.status_badge = ctk.CTkLabel(pv_head, text="Chờ URL...", font=("Segoe UI", 10, "bold"), fg_color=("#E2E8F0", "#334155"), text_color=("#1E293B", "#F8FAFC"), corner_radius=4, height=20, padx=6)
         self.status_badge.pack(side="right")
 
         pv_body = ctk.CTkFrame(self.preview_card, fg_color="transparent")
-        pv_body.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        pv_body.pack(fill="both", expand=True, padx=12, pady=(0, 8))
 
-        self.thumb_label = ctk.CTkLabel(pv_body, text="🖼️ Chưa có Video", width=220, height=124, corner_radius=6, fg_color=("#E2E8F0", "#0F172A"), font=("Segoe UI", 10))
-        self.thumb_label.pack(pady=(0, 4))
+        self.thumb_label = ctk.CTkLabel(pv_body, text="🖼️ Chưa có Video", width=220, height=124, corner_radius=6, fg_color=("#F1F5F9", "#0F172A"), font=("Segoe UI", 11))
+        self.thumb_label.pack(pady=(0, 6))
 
         badge_line = ctk.CTkFrame(pv_body, fg_color="transparent")
-        badge_line.pack(fill="x", pady=(0, 2))
-        self.platform_badge = ctk.CTkLabel(badge_line, text="Đa nền tảng", fg_color="#64748B", text_color="white", corner_radius=4, font=("Segoe UI", 9, "bold"), width=70, height=16)
-        self.platform_badge.pack(side="left", padx=(0, 4))
-        self.type_badge = ctk.CTkLabel(badge_line, text="Video Đơn", fg_color=("#E2E8F0", "#334155"), corner_radius=4, font=("Segoe UI", 9), height=16, padx=4)
+        badge_line.pack(fill="x", pady=(0, 4))
+        self.platform_badge = ctk.CTkLabel(badge_line, text="Đa nền tảng", fg_color="#475569", text_color="white", corner_radius=4, font=("Segoe UI", 10, "bold"), width=80, height=20)
+        self.platform_badge.pack(side="left", padx=(0, 6))
+        self.type_badge = ctk.CTkLabel(badge_line, text="Video Đơn", fg_color=("#E2E8F0", "#334155"), text_color=("#0F172A", "#F8FAFC"), corner_radius=4, font=("Segoe UI", 10, "bold"), height=20, padx=6)
         self.type_badge.pack(side="left")
 
-        self.title_label = ctk.CTkLabel(pv_body, text="Dán link vào ô trên và bấm Phân tích để xem thông tin", font=("Segoe UI", 11, "bold"), anchor="w", justify="left", wraplength=320, text_color=("#1E293B", "#F8FAFC"))
-        self.title_label.pack(anchor="w", fill="x", pady=(0, 1))
+        self.title_label = ctk.CTkLabel(pv_body, text="Dán link vào ô trên và bấm Phân tích để xem thông tin", font=("Segoe UI", 12, "bold"), anchor="w", justify="left", wraplength=340, text_color=("#0F172A", "#F8FAFC"))
+        self.title_label.pack(anchor="w", fill="x", pady=(0, 2))
 
-        self.author_label = ctk.CTkLabel(pv_body, text="👤 Kênh: --", font=("Segoe UI", 9), text_color=("#64748B", "#94A3B8"), anchor="w")
+        self.author_label = ctk.CTkLabel(pv_body, text="👤 Kênh: --", font=("Segoe UI", 11), text_color=("#475569", "#94A3B8"), anchor="w")
         self.author_label.pack(anchor="w")
 
-        self.duration_label = ctk.CTkLabel(pv_body, text="⏱️ Thời lượng: --", font=("Segoe UI", 9), text_color=("#64748B", "#94A3B8"), anchor="w")
+        self.duration_label = ctk.CTkLabel(pv_body, text="⏱️ Thời lượng: --", font=("Segoe UI", 11), text_color=("#475569", "#94A3B8"), anchor="w")
         self.duration_label.pack(anchor="w")
 
         # Cột Phải: Cài đặt chất lượng & Bộ chọn luồng
-        opt_card = ctk.CTkFrame(mid_grid, corner_radius=10)
-        opt_card.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
+        opt_card = ctk.CTkFrame(mid_grid, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
+        opt_card.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
 
         opt_inner = ctk.CTkFrame(opt_card, fg_color="transparent")
-        opt_inner.pack(fill="both", expand=True, padx=12, pady=8)
+        opt_inner.pack(fill="both", expand=True, padx=14, pady=10)
 
         # 1. Cài đặt sẵn (Preset)
         p_row = ctk.CTkFrame(opt_inner, fg_color="transparent")
-        p_row.pack(fill="x", pady=(0, 6))
-        ctk.CTkLabel(p_row, text="⚡ Cấu hình Preset:", font=("Segoe UI", 10, "bold"), text_color=("#2563EB", "#60A5FA")).pack(side="left")
+        p_row.pack(fill="x", pady=(0, 8))
+        ctk.CTkLabel(p_row, text="⚡ Cấu hình Preset:", font=("Segoe UI", 11, "bold"), text_color=("#1D4ED8", "#60A5FA")).pack(side="left")
         self.preset_combo = ctk.CTkComboBox(
             p_row,
             values=[p.get("name", "Preset") for p in self.config_manager.get_presets()],
             command=self.on_preset_selected,
-            height=28,
-            font=("Segoe UI", 10)
+            height=30,
+            font=("Segoe UI", 11)
         )
-        self.preset_combo.pack(side="left", fill="x", expand=True, padx=(6, 4))
+        self.preset_combo.pack(side="left", fill="x", expand=True, padx=(8, 6))
 
         self.btn_save_curr_preset = ctk.CTkButton(
             p_row,
             text="💾 Lưu mẫu",
-            width=70,
-            height=28,
+            width=75,
+            height=30,
             command=self.on_quick_save_preset,
-            fg_color="#64748B",
-            hover_color="#475569",
-            font=("Segoe UI", 9, "bold")
+            fg_color="#475569",
+            hover_color="#334155",
+            font=("Segoe UI", 10, "bold")
         )
         self.btn_save_curr_preset.pack(side="right")
 
         self.mode_var = ctk.StringVar(value="video")
-        self.mode_seg = ctk.CTkSegmentedButton(opt_inner, values=["🎬 Video + Tiếng", "🎵 Chỉ lấy Âm thanh"], command=self.on_mode_changed, height=28)
+        self.mode_seg = ctk.CTkSegmentedButton(opt_inner, values=["🎬 Video + Tiếng", "🎵 Chỉ lấy Âm thanh"], command=self.on_mode_changed, height=32, font=("Segoe UI", 11, "bold"))
         self.mode_seg.set("🎬 Video + Tiếng")
-        self.mode_seg.pack(fill="x", pady=(0, 6))
+        self.mode_seg.pack(fill="x", pady=(0, 8))
 
         # 2. KHUNG XEM & CHỌN LUỒNG CHI TIẾT (FORMAT SELECTOR)
-        fmt_box = ctk.CTkFrame(opt_inner, fg_color=("#F1F5F9", "#1E293B"), corner_radius=8, border_width=1, border_color=("#CBD5E1", "#334155"))
-        fmt_box.pack(fill="x", pady=(0, 6))
+        fmt_box = ctk.CTkFrame(opt_inner, fg_color=("#EFF6FF", "#0F172A"), corner_radius=8, border_width=1.5, border_color=("#3B82F6", "#1D4ED8"))
+        fmt_box.pack(fill="x", pady=(0, 8))
 
         fb_inner = ctk.CTkFrame(fmt_box, fg_color="transparent")
-        fb_inner.pack(fill="x", padx=10, pady=8)
+        fb_inner.pack(fill="x", padx=12, pady=10)
 
         fb_top = ctk.CTkFrame(fb_inner, fg_color="transparent")
-        fb_top.pack(fill="x", pady=(0, 4))
+        fb_top.pack(fill="x", pady=(0, 6))
 
         self.btn_select_format = ctk.CTkButton(
             fb_top,
             text="🎛️ XEM & CHỌN LUỒNG CHI TIẾT (FORMAT SELECTOR)...",
-            height=32,
+            height=36,
             command=self.on_open_format_picker,
-            font=("Segoe UI", 10, "bold"),
-            fg_color="#3B82F6",
-            hover_color="#2563EB"
+            font=("Segoe UI", 11, "bold"),
+            fg_color="#2563EB",
+            hover_color="#1D4ED8"
         )
-        self.btn_select_format.pack(side="left", fill="x", expand=True, padx=(0, 4))
+        self.btn_select_format.pack(side="left", fill="x", expand=True, padx=(0, 6))
 
         self.btn_clear_format = ctk.CTkButton(
             fb_top,
             text="✕ Tự động",
-            width=75,
-            height=32,
+            width=80,
+            height=36,
             command=self.on_clear_custom_format,
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", 10, "bold"),
             fg_color="#64748B",
             hover_color="#475569"
         )
@@ -340,23 +340,24 @@ class DownloadView(ctk.CTkFrame):
         self.custom_format_badge = ctk.CTkLabel(
             fb_inner,
             text="🌟 Chế độ: Tự động tải chất lượng cao nhất theo Preset",
-            font=("Segoe UI", 9),
-            text_color=("#64748B", "#94A3B8"),
+            font=("Segoe UI", 11, "bold"),
+            text_color=("#059669", "#34D399"),
             anchor="w",
-            wraplength=340,
+            wraplength=360,
             justify="left"
         )
         self.custom_format_badge.pack(anchor="w", fill="x")
 
         # 3. Cookie xác thực
         cookie_line = ctk.CTkFrame(opt_inner, fg_color="transparent")
-        cookie_line.pack(fill="x", pady=(0, 6))
-        ctk.CTkLabel(cookie_line, text="🍪 Cookie:", font=("Segoe UI", 10)).pack(side="left", padx=(0, 6))
+        cookie_line.pack(fill="x", pady=(0, 8))
+        ctk.CTkLabel(cookie_line, text="🍪 Cookie:", font=("Segoe UI", 11, "bold")).pack(side="left", padx=(0, 8))
 
         self.cookie_browser_combo = ctk.CTkComboBox(
             cookie_line,
             values=["Không dùng Cookie", "Google Chrome", "Microsoft Edge", "Mozilla Firefox", "Brave Browser", "Opera", "Tệp Cookie (.txt)"],
-            height=28,
+            height=30,
+            font=("Segoe UI", 11),
             command=self.on_cookie_changed
         )
         saved_b = self.config_manager.get("browser_cookie", "none")
@@ -366,60 +367,54 @@ class DownloadView(ctk.CTkFrame):
 
         # 4. Tùy chọn nâng cao
         chk_line = ctk.CTkFrame(opt_inner, fg_color="transparent")
-        chk_line.pack(fill="x", pady=(0, 6))
-        self.thumb_check = ctk.CTkCheckBox(chk_line, text="Nhúng Thumbnail", font=("Segoe UI", 9))
+        chk_line.pack(fill="x", pady=(0, 8))
+        self.thumb_check = ctk.CTkCheckBox(chk_line, text="Nhúng Thumbnail", font=("Segoe UI", 11))
         self.thumb_check.select()
-        self.thumb_check.pack(side="left", padx=(0, 8))
+        self.thumb_check.pack(side="left", padx=(0, 10))
 
-        self.meta_check = ctk.CTkCheckBox(chk_line, text="Gắn Metadata", font=("Segoe UI", 9))
+        self.meta_check = ctk.CTkCheckBox(chk_line, text="Gắn Metadata", font=("Segoe UI", 11))
         self.meta_check.select()
-        self.meta_check.pack(side="left", padx=(0, 8))
+        self.meta_check.pack(side="left", padx=(0, 10))
 
-        self.sub_check = ctk.CTkCheckBox(chk_line, text="Nhúng Phụ đề", font=("Segoe UI", 9))
-        self.sub_check.pack(side="left", padx=(0, 8))
+        self.sub_check = ctk.CTkCheckBox(chk_line, text="Nhúng Phụ đề", font=("Segoe UI", 11))
+        self.sub_check.pack(side="left", padx=(0, 10))
 
-        self.split_chap_check = ctk.CTkCheckBox(chk_line, text="Tách Chapter", font=("Segoe UI", 9))
+        self.split_chap_check = ctk.CTkCheckBox(chk_line, text="Tách Chapter", font=("Segoe UI", 11))
         self.split_chap_check.pack(side="left")
 
         # 5. Thư mục lưu
         dir_line = ctk.CTkFrame(opt_inner, fg_color="transparent")
         dir_line.pack(fill="x", pady=(0, 0))
-        ctk.CTkLabel(dir_line, text="📁 Lưu tại:", font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
-        self.dir_entry = ctk.CTkEntry(dir_line, font=("Segoe UI", 9), height=26)
+        ctk.CTkLabel(dir_line, text="📁 Lưu tại:", font=("Segoe UI", 11, "bold")).pack(side="left", padx=(0, 6))
+        self.dir_entry = ctk.CTkEntry(dir_line, font=("Segoe UI", 11), height=30)
         self.dir_entry.insert(0, self.config_manager.get("download_dir"))
-        self.dir_entry.pack(side="left", fill="x", expand=True, padx=(0, 4))
-        ctk.CTkButton(dir_line, text="📂 Đổi", width=45, height=26, command=self.on_browse_dir, fg_color="#64748B", hover_color="#475569", font=("Segoe UI", 9)).pack(side="right")
-        dir_line.pack(fill="x", pady=(2, 0))
-        ctk.CTkLabel(dir_line, text="📁 Lưu tại:", font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
-        self.dir_entry = ctk.CTkEntry(dir_line, font=("Segoe UI", 9), height=26)
-        self.dir_entry.insert(0, self.config_manager.get("download_dir"))
-        self.dir_entry.pack(side="left", fill="x", expand=True, padx=(0, 4))
-        ctk.CTkButton(dir_line, text="📂 Đổi", width=45, height=26, command=self.on_browse_dir, fg_color="#64748B", hover_color="#475569", font=("Segoe UI", 9)).pack(side="right")
+        self.dir_entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
+        ctk.CTkButton(dir_line, text="📂 Đổi", width=55, height=30, command=self.on_browse_dir, fg_color="#475569", hover_color="#334155", font=("Segoe UI", 10, "bold")).pack(side="right")
 
         # Khung Tiến Trình & Nút Tải
-        act_card = ctk.CTkFrame(self.frame_single, corner_radius=10)
+        act_card = ctk.CTkFrame(self.frame_single, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         act_card.pack(fill="x")
 
         act_inner = ctk.CTkFrame(act_card, fg_color="transparent")
-        act_inner.pack(fill="x", padx=12, pady=8)
+        act_inner.pack(fill="x", padx=14, pady=10)
 
         prog_line = ctk.CTkFrame(act_inner, fg_color="transparent")
-        prog_line.pack(fill="x", pady=(0, 2))
-        self.prog_label = ctk.CTkLabel(prog_line, text="Sẵn sàng tải xuống", font=("Segoe UI", 11, "bold"))
+        prog_line.pack(fill="x", pady=(0, 4))
+        self.prog_label = ctk.CTkLabel(prog_line, text="Sẵn sàng tải xuống", font=("Segoe UI", 12, "bold"), text_color=("#0F172A", "#F8FAFC"))
         self.prog_label.pack(side="left")
-        self.stats_label = ctk.CTkLabel(prog_line, text="", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"))
+        self.stats_label = ctk.CTkLabel(prog_line, text="", font=("Segoe UI", 11, "bold"), text_color=("#1D4ED8", "#60A5FA"))
         self.stats_label.pack(side="right")
 
-        self.prog_bar = ctk.CTkProgressBar(act_inner, height=9, corner_radius=4)
+        self.prog_bar = ctk.CTkProgressBar(act_inner, height=10, corner_radius=5)
         self.prog_bar.set(0.0)
-        self.prog_bar.pack(fill="x", pady=(0, 6))
+        self.prog_bar.pack(fill="x", pady=(0, 8))
 
         btn_row = ctk.CTkFrame(act_inner, fg_color="transparent")
         btn_row.pack(fill="x")
-        self.dl_btn = ctk.CTkButton(btn_row, text="⬇️ BẮT ĐẦU TẢI XUỐNG", height=36, command=self.on_download_toggle, font=("Segoe UI", 12, "bold"), fg_color="#10B981", hover_color="#059669", corner_radius=6)
-        self.dl_btn.pack(side="left", fill="x", expand=True, padx=(0, 6))
+        self.dl_btn = ctk.CTkButton(btn_row, text="⬇️ BẮT ĐẦU TẢI XUỐNG", height=42, command=self.on_download_toggle, font=("Segoe UI", 13, "bold"), fg_color="#059669", hover_color="#047857", corner_radius=8)
+        self.dl_btn.pack(side="left", fill="x", expand=True, padx=(0, 8))
 
-        self.open_folder_btn = ctk.CTkButton(btn_row, text="📂 Mở thư mục", width=110, height=36, command=self.on_open_folder, font=("Segoe UI", 11, "bold"), fg_color="#3B82F6", hover_color="#2563EB", corner_radius=6)
+        self.open_folder_btn = ctk.CTkButton(btn_row, text="📂 Mở thư mục", width=125, height=42, command=self.on_open_folder, font=("Segoe UI", 12, "bold"), fg_color="#2563EB", hover_color="#1D4ED8", corner_radius=8)
         self.open_folder_btn.pack(side="right")
 
     def start_analyze_single_url(self, url: str):
@@ -530,70 +525,70 @@ class DownloadView(ctk.CTkFrame):
     # CHẾ ĐỘ 2: TẢI HÀNG LOẠT & QUÉT TRANG (BATCH MODE)
     # =========================================================================
     def setup_batch_mode_ui(self):
-        top_grid = ctk.CTkFrame(self.frame_batch, corner_radius=10)
+        top_grid = ctk.CTkFrame(self.frame_batch, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         top_grid.pack(fill="x", pady=(0, 8))
 
         top_inner = ctk.CTkFrame(top_grid, fg_color="transparent")
-        top_inner.pack(fill="x", padx=10, pady=8)
+        top_inner.pack(fill="x", padx=12, pady=10)
         top_inner.grid_columnconfigure(0, weight=6)
         top_inner.grid_columnconfigure(1, weight=4)
 
         left_in = ctk.CTkFrame(top_inner, fg_color="transparent")
-        left_in.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
+        left_in.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
 
-        ctk.CTkLabel(left_in, text="📋 Danh sách liên kết hàng loạt (mỗi dòng 1 link):", font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(0, 2))
-        self.text_urls = ctk.CTkTextbox(left_in, height=80, font=("Consolas", 10))
+        ctk.CTkLabel(left_in, text="📋 Danh sách liên kết hàng loạt (mỗi dòng 1 link):", font=("Segoe UI", 12, "bold"), text_color=("#1D4ED8", "#60A5FA")).pack(anchor="w", pady=(0, 4))
+        self.text_urls = ctk.CTkTextbox(left_in, height=90, font=("Consolas", 11))
         self.text_urls.pack(fill="both", expand=True)
 
         right_ctrl = ctk.CTkFrame(top_inner, fg_color="transparent")
-        right_ctrl.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
+        right_ctrl.grid(row=0, column=1, sticky="nsew", padx=(8, 0))
 
-        ctk.CTkLabel(right_ctrl, text="⚙️ Cài đặt hàng loạt:", font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(0, 2))
+        ctk.CTkLabel(right_ctrl, text="⚙️ Cài đặt hàng loạt:", font=("Segoe UI", 12, "bold"), text_color=("#0F172A", "#F8FAFC")).pack(anchor="w", pady=(0, 4))
 
         row_b_opt = ctk.CTkFrame(right_ctrl, fg_color="transparent")
         row_b_opt.pack(fill="x", pady=(0, 6))
-        ctk.CTkLabel(row_b_opt, text="⚡ Cấu hình Preset:", font=("Segoe UI", 9, "bold"), text_color=("#2563EB", "#60A5FA")).pack(side="left", padx=(0, 6))
+        ctk.CTkLabel(row_b_opt, text="⚡ Cấu hình Preset:", font=("Segoe UI", 11, "bold"), text_color=("#1D4ED8", "#60A5FA")).pack(side="left", padx=(0, 6))
         self.batch_preset_combo = ctk.CTkComboBox(
             row_b_opt,
             values=[p.get("name", "Preset") for p in self.config_manager.get_presets()],
             command=self.on_batch_preset_selected,
-            height=28,
-            font=("Segoe UI", 10)
+            height=30,
+            font=("Segoe UI", 11)
         )
         self.batch_preset_combo.pack(side="left", fill="x", expand=True)
 
-        self.batch_range_entry = ctk.CTkEntry(right_ctrl, placeholder_text="Phạm vi playlist (VD: 1-10 hoặc để trống)", height=26, font=("Segoe UI", 9))
-        self.batch_range_entry.pack(fill="x", pady=(0, 4))
+        self.batch_range_entry = ctk.CTkEntry(right_ctrl, placeholder_text="Phạm vi playlist (VD: 1-10 hoặc để trống)", height=30, font=("Segoe UI", 11))
+        self.batch_range_entry.pack(fill="x", pady=(0, 6))
 
         b_btn_row = ctk.CTkFrame(right_ctrl, fg_color="transparent")
         b_btn_row.pack(fill="x")
-        self.batch_start_btn = ctk.CTkButton(b_btn_row, text="▶️ BẮT ĐẦU TẢI DANH SÁCH", height=28, command=self.on_start_batch, fg_color="#10B981", hover_color="#059669", font=("Segoe UI", 11, "bold"))
-        self.batch_start_btn.pack(side="left", fill="x", expand=True, padx=(0, 4))
-        ctk.CTkButton(b_btn_row, text="🧹 Xóa", width=60, height=28, command=self.on_clear_batch, fg_color="#EF4444", hover_color="#DC2626", font=("Segoe UI", 10, "bold")).pack(side="right")
+        self.batch_start_btn = ctk.CTkButton(b_btn_row, text="▶️ BẮT ĐẦU TẢI DANH SÁCH", height=34, command=self.on_start_batch, fg_color="#059669", hover_color="#047857", font=("Segoe UI", 12, "bold"))
+        self.batch_start_btn.pack(side="left", fill="x", expand=True, padx=(0, 6))
+        ctk.CTkButton(b_btn_row, text="🧹 Xóa", width=70, height=34, command=self.on_clear_batch, fg_color="#EF4444", hover_color="#DC2626", font=("Segoe UI", 11, "bold")).pack(side="right")
 
         # Bảng hàng đợi
-        queue_card = ctk.CTkFrame(self.frame_batch, corner_radius=10)
+        queue_card = ctk.CTkFrame(self.frame_batch, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         queue_card.pack(fill="both", expand=True)
 
         q_inner = ctk.CTkFrame(queue_card, fg_color="transparent")
-        q_inner.pack(fill="both", expand=True, padx=10, pady=8)
+        q_inner.pack(fill="both", expand=True, padx=12, pady=10)
 
         prog_r = ctk.CTkFrame(q_inner, fg_color="transparent")
-        prog_r.pack(fill="x", pady=(0, 2))
-        self.batch_total_lbl = ctk.CTkLabel(prog_r, text="Trạng thái: Chưa có tác vụ nào", font=("Segoe UI", 10, "bold"))
+        prog_r.pack(fill="x", pady=(0, 4))
+        self.batch_total_lbl = ctk.CTkLabel(prog_r, text="Trạng thái: Chưa có tác vụ nào", font=("Segoe UI", 11, "bold"), text_color=("#0F172A", "#F8FAFC"))
         self.batch_total_lbl.pack(side="left")
 
-        self.batch_total_bar = ctk.CTkProgressBar(q_inner, height=7, corner_radius=3)
+        self.batch_total_bar = ctk.CTkProgressBar(q_inner, height=9, corner_radius=4)
         self.batch_total_bar.set(0.0)
-        self.batch_total_bar.pack(fill="x", pady=(0, 6))
+        self.batch_total_bar.pack(fill="x", pady=(0, 8))
 
-        tbl_hdr = ctk.CTkFrame(q_inner, fg_color=("#CBD5E1", "#334155"), corner_radius=4, height=24)
-        tbl_hdr.pack(fill="x", pady=(0, 2))
-        ctk.CTkLabel(tbl_hdr, text="STT", width=35, font=("Segoe UI", 9, "bold")).pack(side="left", padx=2)
-        ctk.CTkLabel(tbl_hdr, text="🎬 Tiêu đề Video", anchor="w", width=280, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(tbl_hdr, text="⏱️ Thời lượng", width=75, font=("Segoe UI", 9, "bold")).pack(side="left", padx=4)
-        ctk.CTkLabel(tbl_hdr, text="🔗 Đường dẫn URL", anchor="w", font=("Segoe UI", 9, "bold")).pack(side="left", fill="x", expand=True, padx=4)
-        ctk.CTkLabel(tbl_hdr, text="Trạng thái", width=100, font=("Segoe UI", 9, "bold")).pack(side="right", padx=6)
+        tbl_hdr = ctk.CTkFrame(q_inner, fg_color=("#CBD5E1", "#334155"), corner_radius=4, height=28)
+        tbl_hdr.pack(fill="x", pady=(0, 4))
+        ctk.CTkLabel(tbl_hdr, text="STT", width=40, font=("Segoe UI", 10, "bold")).pack(side="left", padx=2)
+        ctk.CTkLabel(tbl_hdr, text="🎬 Tiêu đề Video", anchor="w", width=300, font=("Segoe UI", 10, "bold")).pack(side="left", padx=4)
+        ctk.CTkLabel(tbl_hdr, text="⏱️ Thời lượng", width=85, font=("Segoe UI", 10, "bold")).pack(side="left", padx=4)
+        ctk.CTkLabel(tbl_hdr, text="🔗 Đường dẫn URL", anchor="w", font=("Segoe UI", 10, "bold")).pack(side="left", fill="x", expand=True, padx=4)
+        ctk.CTkLabel(tbl_hdr, text="Trạng thái", width=110, font=("Segoe UI", 10, "bold")).pack(side="right", padx=6)
 
         self.batch_scroll = ctk.CTkScrollableFrame(q_inner, fg_color="transparent")
         self.batch_scroll.pack(fill="both", expand=True)
@@ -603,52 +598,52 @@ class DownloadView(ctk.CTkFrame):
     # =========================================================================
     def setup_browser_mode_ui(self):
         # 1. Thanh điều hướng Browser Toolbar
-        br_ctrl = ctk.CTkFrame(self.frame_browser, corner_radius=8, height=44)
+        br_ctrl = ctk.CTkFrame(self.frame_browser, corner_radius=8, height=48, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))
         br_ctrl.pack(fill="x", pady=(0, 6))
 
         bc_inner = ctk.CTkFrame(br_ctrl, fg_color="transparent")
-        bc_inner.pack(fill="x", padx=8, pady=6)
+        bc_inner.pack(fill="x", padx=10, pady=6)
 
         # Các nút điều hướng nhanh
-        btn_home = ctk.CTkButton(bc_inner, text="🏠", width=34, height=32, command=self.on_browser_home, font=("Segoe UI", 12))
-        btn_home.pack(side="left", padx=(0, 3))
+        btn_home = ctk.CTkButton(bc_inner, text="🏠", width=36, height=34, command=self.on_browser_home, font=("Segoe UI", 13))
+        btn_home.pack(side="left", padx=(0, 4))
 
-        btn_back = ctk.CTkButton(bc_inner, text="◀", width=34, height=32, command=self.on_browser_back, font=("Segoe UI", 11))
-        btn_back.pack(side="left", padx=(0, 3))
+        btn_back = ctk.CTkButton(bc_inner, text="◀", width=36, height=34, command=self.on_browser_back, font=("Segoe UI", 12, "bold"))
+        btn_back.pack(side="left", padx=(0, 4))
 
-        btn_fwd = ctk.CTkButton(bc_inner, text="▶", width=34, height=32, command=self.on_browser_forward, font=("Segoe UI", 11))
-        btn_fwd.pack(side="left", padx=(0, 3))
+        btn_fwd = ctk.CTkButton(bc_inner, text="▶", width=36, height=34, command=self.on_browser_forward, font=("Segoe UI", 12, "bold"))
+        btn_fwd.pack(side="left", padx=(0, 4))
 
-        btn_reload = ctk.CTkButton(bc_inner, text="🔄", width=34, height=32, command=self.on_browser_reload, font=("Segoe UI", 11))
-        btn_reload.pack(side="left", padx=(0, 6))
+        btn_reload = ctk.CTkButton(bc_inner, text="🔄", width=36, height=34, command=self.on_browser_reload, font=("Segoe UI", 12))
+        btn_reload.pack(side="left", padx=(0, 8))
 
         # Thanh nhập URL / Tìm kiếm
         self.browser_address_entry = ctk.CTkEntry(
             bc_inner,
             placeholder_text="Nhập địa chỉ URL (VD: https://www.youtube.com) hoặc từ khóa tìm kiếm...",
-            font=("Segoe UI", 11),
-            height=32
+            font=("Segoe UI", 12),
+            height=34
         )
         self.browser_address_entry.insert(0, "https://www.youtube.com")
-        self.browser_address_entry.pack(side="left", fill="x", expand=True, padx=(0, 4))
+        self.browser_address_entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
         self.browser_address_entry.bind("<Return>", lambda e: self.on_browser_navigate())
         self.browser_address_entry.bind("<Button-1>", lambda e: self._on_entry_click(self.browser_address_entry))
         self.browser_address_entry.bind("<KeyPress>", self._on_browser_entry_typing)
         self._bind_context_menu(self.browser_address_entry)
 
-        btn_go = ctk.CTkButton(bc_inner, text="Đi", width=45, height=32, command=self.on_browser_navigate, font=("Segoe UI", 11, "bold"))
+        btn_go = ctk.CTkButton(bc_inner, text="Đi", width=50, height=34, command=self.on_browser_navigate, font=("Segoe UI", 12, "bold"), fg_color="#2563EB", hover_color="#1D4ED8")
         btn_go.pack(side="left", padx=(0, 8))
 
         # Nút Quét Video Trên Trang Đang Xem
         self.btn_scan_page = ctk.CTkButton(
             bc_inner,
             text="🔍 QUÉT VIDEO TRANG NÀY",
-            height=32,
-            width=165,
+            height=34,
+            width=180,
             command=self.on_scan_current_browser_page,
             font=("Segoe UI", 11, "bold"),
-            fg_color="#10B981",
-            hover_color="#059669"
+            fg_color="#059669",
+            hover_color="#047857"
         )
         self.btn_scan_page.pack(side="left", padx=(0, 6))
 
@@ -656,17 +651,17 @@ class DownloadView(ctk.CTkFrame):
         self.btn_dl_current = ctk.CTkButton(
             bc_inner,
             text="⚡ TẢI VIDEO ĐANG XEM",
-            height=32,
-            width=150,
+            height=34,
+            width=165,
             command=self.on_download_current_browser_video,
             font=("Segoe UI", 11, "bold"),
-            fg_color="#3B82F6",
-            hover_color="#2563EB"
+            fg_color="#2563EB",
+            hover_color="#1D4ED8"
         )
         self.btn_dl_current.pack(side="left", padx=(0, 6))
 
         # Nút Copy Link
-        btn_copy = ctk.CTkButton(bc_inner, text="📋", width=34, height=32, command=self.on_browser_copy_link, font=("Segoe UI", 11))
+        btn_copy = ctk.CTkButton(bc_inner, text="📋", width=36, height=34, command=self.on_browser_copy_link, font=("Segoe UI", 12), fg_color="#475569", hover_color="#334155")
         btn_copy.pack(side="right")
 
         # 2. Khung chứa Trình duyệt Chromium Nhúng
