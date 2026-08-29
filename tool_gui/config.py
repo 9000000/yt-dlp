@@ -41,7 +41,9 @@ DNS_PRESETS = {
     }
 }
 
+# Chuẩn hóa 6 Cấu hình Mặc định: 4 Video + Âm thanh và 2 Chỉ Âm thanh
 DEFAULT_DOWNLOAD_PRESETS = [
+    # --- 4 CẤU HÌNH VIDEO + ÂM THANH ---
     {
         "id": "best_video",
         "name": "🌟 Video MP4 (Chất lượng gốc cao nhất)",
@@ -59,27 +61,7 @@ DEFAULT_DOWNLOAD_PRESETS = [
         "video_codec": "Tự động (Tối ưu)",
         "fps_prefer": "60fps (Mượt mà)",
         "split_chapters": False,
-        "ratelimit": "Không giới hạn",
-        "retries": 10
-    },
-    {
-        "id": "music_mp3_320",
-        "name": "🎵 Nhạc MP3 320kbps (Studio Master)",
-        "description": "Trích xuất âm thanh chuẩn Studio 320kbps, nhúng bìa album và thẻ nghệ sĩ/bài hát.",
-        "mode": "audio",
-        "quality": "🌟 Tốt nhất có thể (Gốc)",
-        "format": "MP3",
-        "audio_codec": "MP3 - 320 kbps (Cực cao)",
-        "embed_thumbnail": True,
-        "add_metadata": True,
-        "embed_subtitles": False,
-        "sub_langs": "",
-        "auto_subs": False,
-        "concurrent_fragments": 4,
-        "video_codec": "Không áp dụng",
-        "fps_prefer": "Mặc định",
-        "split_chapters": False,
-        "ratelimit": "Không giới hạn",
+        "ratelimit": "Không giới hạn (Tối đa)",
         "retries": 10
     },
     {
@@ -96,10 +78,10 @@ DEFAULT_DOWNLOAD_PRESETS = [
         "sub_langs": "vi,en",
         "auto_subs": True,
         "concurrent_fragments": 8,
-        "video_codec": "H.264 / AVC1 (Tương thích)",
+        "video_codec": "H.264 / AVC1 (Tương thích cao nhất)",
         "fps_prefer": "60fps (Mượt mà)",
         "split_chapters": False,
-        "ratelimit": "Không giới hạn",
+        "ratelimit": "Không giới hạn (Tối đa)",
         "retries": 10
     },
     {
@@ -116,10 +98,10 @@ DEFAULT_DOWNLOAD_PRESETS = [
         "sub_langs": "vi,en",
         "auto_subs": True,
         "concurrent_fragments": 4,
-        "video_codec": "H.264 / AVC1 (Tương thích)",
+        "video_codec": "H.264 / AVC1 (Tương thích cao nhất)",
         "fps_prefer": "Mặc định",
         "split_chapters": False,
-        "ratelimit": "Không giới hạn",
+        "ratelimit": "Không giới hạn (Tối đa)",
         "retries": 10
     },
     {
@@ -139,16 +121,38 @@ DEFAULT_DOWNLOAD_PRESETS = [
         "video_codec": "Tự động (Tối ưu)",
         "fps_prefer": "Mặc định",
         "split_chapters": False,
-        "ratelimit": "Không giới hạn",
+        "ratelimit": "Không giới hạn (Tối đa)",
+        "retries": 10
+    },
+
+    # --- 2 CẤU HÌNH CHỈ LẤY ÂM THANH ---
+    {
+        "id": "music_mp3_320",
+        "name": "🎵 Nhạc MP3 320kbps (Studio Master)",
+        "description": "Trích xuất âm thanh chuẩn Studio 320kbps, nhúng bìa album và thẻ nghệ sĩ/bài hát.",
+        "mode": "audio",
+        "quality": "🌟 Tốt nhất có thể (Gốc)",
+        "format": "MP3",
+        "audio_codec": "MP3 - 320 kbps (Cực cao)",
+        "embed_thumbnail": True,
+        "add_metadata": True,
+        "embed_subtitles": False,
+        "sub_langs": "",
+        "auto_subs": False,
+        "concurrent_fragments": 4,
+        "video_codec": "Không áp dụng",
+        "fps_prefer": "Mặc định",
+        "split_chapters": False,
+        "ratelimit": "Không giới hạn (Tối đa)",
         "retries": 10
     },
     {
         "id": "podcast_split_chapters",
-        "name": "🎙️ Podcast & Sách Nói (Tự động tách Chapter)",
-        "description": "Tải trích xuất âm thanh đồng thời tự động chia nhỏ file theo từng chương mục thời gian.",
+        "name": "🎙️ Podcast & Sách Nói (M4A Tách Chapter)",
+        "description": "Trích xuất âm thanh gốc M4A/AAC nguyên bản, nhúng bìa và tự động tách nhỏ theo Chapter.",
         "mode": "audio",
         "quality": "🌟 Tốt nhất có thể (Gốc)",
-        "format": "M4A / AAC (Gốc)",
+        "format": "M4A",
         "audio_codec": "M4A / AAC (Gốc)",
         "embed_thumbnail": True,
         "add_metadata": True,
@@ -159,7 +163,7 @@ DEFAULT_DOWNLOAD_PRESETS = [
         "video_codec": "Không áp dụng",
         "fps_prefer": "Mặc định",
         "split_chapters": True,
-        "ratelimit": "Không giới hạn",
+        "ratelimit": "Không giới hạn (Tối đa)",
         "retries": 10
     }
 ]
