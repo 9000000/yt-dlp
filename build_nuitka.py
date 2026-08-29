@@ -81,7 +81,7 @@ def prepare_staging_with_pyd():
         print(f"   🔒 Đang mã hóa: {mod_rel} ➡️ .pyd ...")
         cmd = [
             sys.executable, "-m", "nuitka",
-            "--module",
+            "--mode=module",
             "--remove-output",
             "--no-pyi-file",
             f"--output-dir={stg_py.parent}",
@@ -206,7 +206,7 @@ def build_full_nuitka_exe():
 
     cmd = [
         sys.executable, "-m", "nuitka",
-        "--standalone",
+        "--mode=standalone",
         "--windows-console-mode=disable",
         "--enable-plugin=tk-inter",
         "--include-package=customtkinter",
