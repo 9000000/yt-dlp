@@ -49,8 +49,11 @@ class DownloadView(ctk.CTkFrame):
         self.app_dir = Path(__file__).resolve().parent.parent.parent
         self.tool_dir = Path(__file__).resolve().parent.parent
         self.url_sync_file = self.app_dir / ".current_browser_url.txt"
+        self.action_file = self.app_dir / ".browser_action.json"
+        self._last_action_time = time.time()
 
         self.setup_ui()
+        self._start_browser_action_watcher()
 
     def log(self, msg: str):
         if self.log_callback:
@@ -1027,3 +1030,35 @@ class DownloadView(ctk.CTkFrame):
         self.batch_total_lbl.configure(text=f"✅ Đã hoàn tất {total} mục!")
         self.log(f"[Tải hàng loạt] Hoàn tất {total} mục.")
         msgbox.showinfo("Hoàn tất", f"Đã hoàn thành quá trình tải hàng loạt ({total} mục)!")
+
+    def _start_browser_action_watcher(self):
+        """Lắng nghe các lệnh gửi từ Thanh công cụ nổi trên trình duyệt Edge Chromium."""
+        try:
+            if self.action_file.exists():
+                with open(self.action_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+
+                act_time = data.get("time", 0)
+                if act_time > self._last_action_time:
+                    self._last_action_time = act_time
+                    act = data.get("action")
+                    url = data.get("url")
+
+                    if act == "scan" and url:
+                        self.show_browser_mode()
+                        self.browser_address_entry.delete(0, "end")
+                        self.browser_address_entry.insert(0, url)
+                        self.browser_search_worker(url, is_keyword=False)
+                    elif act == "download" and url:
+                        self.show_single_mode()
+                        self.universal_entry.delete(0, "end")
+                        self.universal_entry.insert(0, url)
+                        self.start_analyze_single_url(url)
+
+                    try:
+                        self.action_file.unlink(missing_ok=True)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        self.after(350, self._start_browser_action_watcher)
