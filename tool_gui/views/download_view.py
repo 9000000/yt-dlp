@@ -46,7 +46,8 @@ class DownloadView(ctk.CTkFrame):
         self.embedded_browser_proc = None
 
         # File lưu URL đang duyệt
-        self.app_dir = Path(__file__).resolve().parent.parent
+        self.app_dir = Path(__file__).resolve().parent.parent.parent
+        self.tool_dir = Path(__file__).resolve().parent.parent
         self.url_sync_file = self.app_dir / ".current_browser_url.txt"
 
         self.setup_ui()
@@ -578,7 +579,7 @@ class DownloadView(ctk.CTkFrame):
             if getattr(sys, 'frozen', False):
                 self.embedded_browser_proc = subprocess.Popen([sys.executable, "--embedded-browser", str(hwnd), target_url, str(w), str(h)])
             else:
-                script_path = str(self.app_dir / "tool_gui" / "embedded_browser.py")
+                script_path = str(self.tool_dir / "embedded_browser.py")
                 self.embedded_browser_proc = subprocess.Popen([sys.executable, script_path, str(hwnd), target_url, str(w), str(h)])
         except Exception as e:
             self.log(f"[Trình duyệt nhúng] Lỗi: {e}")

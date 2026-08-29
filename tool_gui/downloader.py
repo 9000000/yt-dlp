@@ -19,6 +19,13 @@ except ImportError:
 
 from tool_gui.updater import UpdaterManager
 
+class QuietYTDLPLogger:
+    """Bộ ghi log yên lặng ngăn yt-dlp in lỗi khóa cookie ra màn hình."""
+    def debug(self, msg): pass
+    def info(self, msg): pass
+    def warning(self, msg): pass
+    def error(self, msg): pass
+
 class DownloadTask:
     """Tác vụ tải video / âm thanh."""
 
@@ -231,6 +238,7 @@ class DownloadTask:
             'ignoreerrors': False,
             'quiet': True,
             'no_warnings': True,
+            'logger': QuietYTDLPLogger(),
             'concurrent_fragment_downloads': 4,
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',

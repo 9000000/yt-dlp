@@ -1,107 +1,114 @@
 """
-Module Tự động Nhận diện & Trích xuất Metadata Liên kết (URL Detector & Extractor).
-Hỗ trợ TikTok (kèm fallback TikWM), Facebook, YouTube (kèm PO Token / Multi-client Botguard bypass), Bilibili, Instagram, và hơn 1000 nền tảng.
+Module Nhận Diện Nền Tảng & Trích Xuất Metadata Video/Playlist.
+Hỗ trợ YouTube, TikTok, Facebook, Instagram, Bilibili, Douyin, X (Twitter), Pinterest, v.v.
+Tích hợp bypass Botguard YouTube (PO Token) và fallback đa luồng chống khóa Cookie trình duyệt.
 """
 
 import os
 import re
-import io
 import time
-import urllib.parse
-from pathlib import Path
-from PIL import Image
 import requests
+from io import BytesIO
+from PIL import Image
 
 try:
     import yt_dlp
 except ImportError:
     yt_dlp = None
 
-class URLDetector:
-    """Xử lý nhận diện và trích xuất thông tin URL."""
+class QuietYTDLPLogger:
+    """Bộ ghi log yên lặng ngăn yt-dlp in lỗi khóa cookie ra màn hình."""
+    def debug(self, msg): pass
+    def info(self, msg): pass
+    def warning(self, msg): pass
+    def error(self, msg): pass
 
-    @staticmethod
-    def is_valid_url(text: str) -> bool:
-        """Kiểm tra xem chuỗi có phải là đường dẫn URL hợp lệ không."""
+class URLDetector:
+    """Lớp tiện ích phân tích URL, nhận diện nền tảng và lấy thông tin video."""
+
+    PLATFORMS = {
+        "YouTube": [r"(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)"],
+        "TikTok": [r"(?:https?:\/\/)?(?:www\.)?(?:tiktok\.com|vt\.tiktok\.com)"],
+        "Facebook": [r"(?:https?:\/\/)?(?:www\.|m\.|web\.|fb\.)?(?:facebook\.com|fb\.watch|fb\.me)"],
+        "Instagram": [r"(?:https?:\/\/)?(?:www\.)?instagram\.com"],
+        "Bilibili": [r"(?:https?:\/\/)?(?:www\.)?bilibili\.com"],
+        "Douyin": [r"(?:https?:\/\/)?(?:www\.)?douyin\.com"],
+        "X / Twitter": [r"(?:https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)"],
+        "Pinterest": [r"(?:https?:\/\/)?(?:www\.)?(?:pinterest\.com|pin\.it)"],
+        "Vimeo": [r"(?:https?:\/\/)?(?:www\.)?vimeo\.com"],
+        "SoundCloud": [r"(?:https?:\/\/)?(?:www\.)?soundcloud\.com"],
+    }
+
+    @classmethod
+    def is_valid_url(cls, text: str) -> bool:
         if not text or not isinstance(text, str):
             return False
-        text = text.strip()
-        if not (text.startswith("http://") or text.startswith("https://")):
-            return False
-        try:
-            parsed = urllib.parse.urlparse(text)
-            return bool(parsed.netloc) and len(parsed.netloc.split('.')) >= 2
-        except Exception:
-            return False
+        pattern = r"^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$"
+        return bool(re.match(pattern, text.strip()))
 
     @classmethod
     def detect_platform(cls, url: str) -> str:
-        """Nhận diện nền tảng từ URL."""
         if not url:
-            return "Khác"
-        u = url.lower()
-        if "youtube.com" in u or "youtu.be" in u:
-            return "YouTube"
-        elif "tiktok.com" in u or "douyin.com" in u:
-            return "TikTok"
-        elif "facebook.com" in u or "fb.watch" in u or "fb.com" in u:
-            return "Facebook"
-        elif "instagram.com" in u:
-            return "Instagram"
-        elif "bilibili.com" in u:
-            return "Bilibili"
-        elif "twitter.com" in u or "x.com" in u:
-            return "Twitter / X"
-        elif "threads.net" in u:
-            return "Threads"
-        elif "soundcloud.com" in u:
-            return "SoundCloud"
-        elif "twitch.tv" in u:
-            return "Twitch"
-        elif "vimeo.com" in u:
-            return "Vimeo"
-        elif "reddit.com" in u:
-            return "Reddit"
-        elif "kuaishou.com" in u:
-            return "Kuaishou"
+            return "Không xác định"
+        for name, patterns in cls.PLATFORMS.items():
+            for p in patterns:
+                if re.search(p, url, re.IGNORECASE):
+                    return name
         return "Đa nền tảng"
 
     @staticmethod
     def format_duration(seconds: int | float | None) -> str:
-        """Định dạng số giây thành chuỗi thời lượng (hh:mm:ss hoặc mm:ss)."""
-        if not seconds or seconds < 0:
-            return "Không xác định"
-        seconds = int(seconds)
-        hours = seconds // 3600
-        mins = (seconds % 3600) // 60
-        secs = seconds % 60
-        if hours > 0:
-            return f"{hours:02d}:{mins:02d}:{secs:02d}"
-        return f"{mins:02d}:{secs:02d}"
+        if seconds is None or seconds < 0:
+            return "--:--"
+        try:
+            sec = int(seconds)
+            h = sec // 3600
+            m = (sec % 3600) // 60
+            s = sec % 60
+            if h > 0:
+                return f"{h:02d}:{m:02d}:{s:02d}"
+            return f"{m:02d}:{s:02d}"
+        except Exception:
+            return "--:--"
+
+    @staticmethod
+    def load_thumbnail_image(url: str, size: tuple[int, int] = (240, 135)) -> Image.Image | None:
+        if not url:
+            return None
+        try:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            }
+            resp = requests.get(url, headers=headers, timeout=6)
+            if resp.status_code == 200:
+                img = Image.open(BytesIO(resp.content))
+                img = img.convert("RGB")
+                img.thumbnail(size, Image.Resampling.LANCZOS)
+                return img
+        except Exception:
+            pass
+        return None
 
     @classmethod
     def _extract_tiktok_fallback(cls, url: str) -> tuple[bool, dict | None, str]:
-        """Trích xuất nhanh video TikTok qua TikWM API nếu yt-dlp gặp lỗi."""
         try:
-            resp = requests.post('https://www.tikwm.com/api/', data={'url': url, 'count': 12, 'cursor': 0, 'web': 1, 'hd': 1}, timeout=8)
+            api_url = "https://www.tikwm.com/api/"
+            resp = requests.post(api_url, data={"url": url, "hd": 1}, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
             if resp.status_code == 200:
                 data = resp.json()
-                if data.get('code') == 0:
-                    d = data.get('data', {})
-                    title = d.get('title') or 'TikTok Video'
-                    author = d.get('author', {}).get('nickname') or d.get('author', {}).get('unique_id') or 'TikTok Creator'
-                    duration = d.get('duration', 0)
-                    cover = d.get('cover', '')
-                    if cover and not cover.startswith('http'):
-                        cover = 'https://www.tikwm.com' + cover
+                if data.get("code") == 0 and "data" in data:
+                    d = data["data"]
+                    title = d.get("title") or "Video TikTok không tiêu đề"
+                    author = d.get("author", {}).get("nickname", "Không rõ tác giả")
+                    duration = d.get("duration", 0)
+                    cover = d.get("cover") or d.get("origin_cover")
+                    play_url = d.get("hdplay") or d.get("play")
+                    if play_url and not play_url.startswith("http"):
+                        play_url = "https://www.tikwm.com" + play_url
 
-                    play_url = d.get('hdplay') or d.get('play')
-                    if play_url and not play_url.startswith('http'):
-                        play_url = 'https://www.tikwm.com' + play_url
-
-                    music_url = d.get('music')
-                    if music_url and not music_url.startswith('http'):
-                        music_url = 'https://www.tikwm.com' + music_url
+                    music_url = d.get("music")
+                    if music_url and not music_url.startswith("http"):
+                        music_url = "https://www.tikwm.com" + music_url
 
                     result = {
                         "url": url,
@@ -139,7 +146,7 @@ class URLDetector:
     ) -> tuple[bool, dict | None, str]:
         """
         Trích xuất thông tin chi tiết video/playlist từ URL bằng yt-dlp và bộ giải mã phụ trợ.
-        Tích hợp hỗ trợ YouTube PO Token / Botguard bypass.
+        Tự động xử lý ngoại lệ cookie và PO Token.
         """
         plat = cls.detect_platform(url)
 
@@ -150,6 +157,7 @@ class URLDetector:
                 'extract_flat': 'in_playlist',
                 'skip_download': True,
                 'ignoreerrors': False,
+                'logger': QuietYTDLPLogger(),
                 'http_headers': {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                     'Accept-Language': 'vi,en;q=0.9',
@@ -158,7 +166,7 @@ class URLDetector:
             }
 
             # Tích hợp YouTube Botguard / PO Token Provider & Multi-client fallback
-            if plat == "YouTube" and pot_enabled:
+            if ("youtube.com" in url.lower() or "youtu.be" in url.lower()) and pot_enabled:
                 extractor_args = {
                     'youtube': {
                         'player_client': ['web', 'android', 'ios']
@@ -166,7 +174,7 @@ class URLDetector:
                 }
                 if pot_provider_url and pot_provider_url.startswith("http"):
                     extractor_args['youtubepot-bgutil'] = {
-                        'provider_url': [pot_provider_url]
+                        'base_url': [pot_provider_url]
                     }
                 base_opts['extractor_args'] = extractor_args
 
@@ -183,7 +191,7 @@ class URLDetector:
                 except Exception as e:
                     last_err = str(e)
 
-            # 2. Thử với Cookie trình duyệt nếu được chọn
+            # 2. Thử với Cookie trình duyệt nếu được chọn (tự động bỏ qua nếu trình duyệt đang khóa db)
             if not info and cookie_browser and cookie_browser not in ["none", "file", ""]:
                 ydl_opts_cookie = dict(base_opts)
                 ydl_opts_cookie['cookiesfrombrowser'] = (cookie_browser,)
@@ -193,7 +201,7 @@ class URLDetector:
                 except Exception as e:
                     last_err = str(e)
 
-            # 3. Thử chế độ chuẩn
+            # 3. Thử chế độ chuẩn không cookie
             if not info:
                 try:
                     with yt_dlp.YoutubeDL(base_opts) as ydl:
@@ -218,12 +226,10 @@ class URLDetector:
                     "📱 HD 720p (60fps)",
                     "📱 HD 720p",
                     "📱 SD 480p",
-                    "⚡ Thấp 360p (Tiết kiệm dung lượng)",
-                    "⚡ Nhỏ nhất 240p / 144p",
-                    "🎵 Chỉ tải Âm thanh (Audio MP3/M4A)"
+                    "⚡ Thấp (360p)",
+                    "⚡ Tiết kiệm dữ liệu (240p/144p)",
+                    "🎵 Chỉ lấy Âm thanh (MP3 / M4A)"
                 ]
-
-                entries_count = len(list(info.get('entries', []))) if is_playlist else 1
 
                 result = {
                     "url": url,
@@ -234,10 +240,11 @@ class URLDetector:
                     "thumbnail_url": thumbnail_url,
                     "platform": plat,
                     "is_playlist": is_playlist,
-                    "playlist_count": entries_count,
-                    "qualities": qualities_list
+                    "playlist_count": len(info.get('entries', [])) if is_playlist else 1,
+                    "qualities": qualities_list,
+                    "formats": info.get('formats', [])
                 }
-                return True, result, "Lấy thông tin thành công!"
+                return True, result, "Phân tích thông tin thành công!"
 
         # Fallback cho TikTok
         if plat == "TikTok":
@@ -245,23 +252,8 @@ class URLDetector:
             if ok:
                 return True, res, msg
 
-        if plat == "Facebook":
-            return False, None, "Video Facebook này yêu cầu phiên đăng nhập (Cookie).\n👉 Hãy dùng tệp cookies.txt hoặc chọn trình duyệt trong Cài đặt để xác thực."
+        clean_err = last_err if last_err else "Không thể kết nối hoặc bóc tách thông tin từ đường dẫn này."
+        if "could not copy" in clean_err.lower() or "database" in clean_err.lower():
+            clean_err = "Trình duyệt đang mở nên tệp Cookie bị khóa.\n👉 Hãy tắt trình duyệt hoặc chọn 'Không dùng Cookie' / 'Tệp Cookie (.txt)' để tiếp tục."
 
-        return False, None, "Không thể lấy thông tin từ liên kết này. Vui lòng kiểm tra lại đường dẫn."
-
-    @staticmethod
-    def load_thumbnail_image(url: str, size: tuple = (200, 112)) -> Image.Image | None:
-        """Tải ảnh thumbnail từ URL và resize phù hợp để hiển thị trên UI."""
-        if not url:
-            return None
-        try:
-            resp = requests.get(url, timeout=6, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
-            if resp.status_code == 200:
-                img = Image.open(io.BytesIO(resp.content))
-                img = img.convert("RGBA")
-                img.thumbnail(size, Image.Resampling.LANCZOS)
-                return img
-        except Exception:
-            pass
-        return None
+        return False, None, clean_err
