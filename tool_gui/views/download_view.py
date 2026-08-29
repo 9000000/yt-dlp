@@ -322,7 +322,6 @@ class DownloadView(ctk.CTkFrame):
         self.audio_combo = ctk.CTkComboBox(grid_c, values=["MP3 - 320 kbps (Cực cao)", "MP3 - 256 kbps", "MP3 - 192 kbps", "MP3 - 128 kbps", "M4A / AAC (Gốc)", "FLAC", "WAV", "OPUS"], height=28)
         self.audio_combo.set("MP3 - 320 kbps (Cực cao)")
         self.audio_combo.grid(row=3, column=0, sticky="ew", padx=(0, 2))
-        self.audio_combo.configure(state="disabled")
 
         self.cookie_browser_combo = ctk.CTkComboBox(grid_c, values=["Không dùng Cookie", "Google Chrome", "Microsoft Edge", "Mozilla Firefox", "Brave Browser", "Opera", "Tệp Cookie (.txt)"], height=28, command=self.on_cookie_changed)
         saved_b = self.config_manager.get("browser_cookie", "none")
@@ -754,7 +753,7 @@ class DownloadView(ctk.CTkFrame):
             self.mode_var.set("video")
             self.quality_combo.configure(state="normal")
             self.fmt_combo.configure(state="normal")
-            self.audio_combo.configure(state="disabled")
+            self.audio_combo.configure(state="normal")
             self.sub_check.configure(state="normal")
 
     def refresh_presets_in_view(self):
