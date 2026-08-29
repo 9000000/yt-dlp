@@ -1,10 +1,9 @@
 """
-Màn hình Cài Đặt Toàn Diện (Settings & Tools View).
-Tích hợp:
+Màn hình Cài Đặt Chung & Quản Lý Phụ Trợ (Settings View).
+Bao gồm:
 1. ⚙️ Cài Đặt Chung & DNS Vượt Chặn Web
-2. 🎛️ Quản Lý Cài Đặt Sẵn (Download Presets - Tạo mới / Sửa / Xóa)
-3. 🛠️ Quản Lý Phụ Trợ & Cập Nhật (FFmpeg & yt-dlp Engine)
-4. 🔐 Bản Quyền & Thiết Bị (License PRO)
+2. 🛠️ Quản Lý Phụ Trợ & Cập Nhật (FFmpeg & yt-dlp Core)
+3. 🔐 Bản Quyền PRO & Máy Chủ
 """
 
 import time
@@ -15,12 +14,12 @@ import tkinter.messagebox as msgbox
 from tkinter import filedialog
 from pathlib import Path
 
-from tool_gui.config import ConfigManager, DNS_PRESETS, DEFAULT_DOWNLOAD_PRESETS
+from tool_gui.config import ConfigManager, DNS_PRESETS
 from tool_gui.license_manager import LicenseManager
 from tool_gui.updater import UpdaterManager
 
 class SettingsView(ctk.CTkFrame):
-    """Giao diện Cài đặt toàn diện tích hợp Quản lý Phụ trợ và Quản lý Presets."""
+    """Giao diện Cài đặt toàn diện tích hợp Quản lý Phụ trợ và Cấu hình DNS."""
 
     def __init__(self, master, config_manager: ConfigManager, license_manager: LicenseManager, on_reauth_callback=None, log_callback=None, **kwargs):
         super().__init__(master, **kwargs)
@@ -41,18 +40,16 @@ class SettingsView(ctk.CTkFrame):
         main_container = ctk.CTkFrame(self, fg_color="transparent")
         main_container.pack(fill="both", expand=True, padx=12, pady=10)
 
-        # Tabview Chính
+        # Tabview Chính (3 Tab)
         self.tabview = ctk.CTkTabview(main_container, corner_radius=10)
         self.tabview.pack(fill="both", expand=True)
 
         self.tab_general = self.tabview.add("⚙️ Cài Đặt Chung & DNS")
-        self.tab_presets = self.tabview.add("🎛️ Quản Lý Cài Đặt Sẵn (Presets)")
         self.tab_tools = self.tabview.add("🛠️ Phụ Trợ & Cập Nhật")
         self.tab_license = self.tabview.add("🔐 Bản Quyền PRO")
 
         # Thiết lập nội dung từng tab
         self._setup_tab_general()
-        self._setup_tab_presets()
         self._setup_tab_tools()
         self._setup_tab_license()
 
@@ -163,118 +160,7 @@ class SettingsView(ctk.CTkFrame):
         save_btn.pack(fill="x", pady=(5, 10))
 
     # =========================================================================
-    # TAB 2: QUẢN LÝ CÀI ĐẶT SẴN (PRESETS)
-    # =========================================================================
-    def _setup_tab_presets(self):
-        scroll = ctk.CTkScrollableFrame(self.tab_presets, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=10, pady=8)
-
-        # Header và chọn Preset
-        top_box = ctk.CTkFrame(scroll, corner_radius=8)
-        top_box.pack(fill="x", pady=(0, 10))
-
-        t_in = ctk.CTkFrame(top_box, fg_color="transparent")
-        t_in.pack(fill="x", padx=15, pady=12)
-
-        ctk.CTkLabel(t_in, text="🎛️ DANH SÁCH CẤU HÌNH SẴN (PRESETS)", font=("Segoe UI", 13, "bold"), text_color=("#2563EB", "#60A5FA")).pack(anchor="w", pady=(0, 6))
-        ctk.CTkLabel(t_in, text="Tạo và quản lý các mẫu tải nhanh (định dạng, chất lượng, phụ đề, âm thanh) để áp dụng chỉ với 1 click khi tải video.", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"), wraplength=620, justify="left").pack(anchor="w", pady=(0, 10))
-
-        sel_row = ctk.CTkFrame(t_in, fg_color="transparent")
-        sel_row.pack(fill="x", pady=(0, 8))
-        ctk.CTkLabel(sel_row, text="Chọn Preset:", font=("Segoe UI", 11, "bold")).pack(side="left", padx=(0, 10))
-
-        self.preset_select_combo = ctk.CTkComboBox(sel_row, values=[], command=self.on_preset_picked_in_editor, height=30)
-        self.preset_select_combo.pack(side="left", fill="x", expand=True, padx=(0, 10))
-
-        self.btn_new_preset = ctk.CTkButton(sel_row, text="➕ Tạo Mới", width=85, height=30, command=self.on_new_preset_clicked, fg_color="#3B82F6", hover_color="#2563EB", font=("Segoe UI", 11, "bold"))
-        self.btn_new_preset.pack(side="right")
-
-        # Form chỉnh sửa Preset
-        edit_box = ctk.CTkFrame(scroll, corner_radius=8, fg_color=("#F8FAFC", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
-        edit_box.pack(fill="x", pady=(0, 10))
-
-        e_in = ctk.CTkFrame(edit_box, fg_color="transparent")
-        e_in.pack(fill="x", padx=15, pady=12)
-
-        ctk.CTkLabel(e_in, text="📝 THÔNG TIN CẤU HÌNH PRESET", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(0, 8))
-
-        ctk.CTkLabel(e_in, text="Tên cấu hình mẫu:", font=("Segoe UI", 11)).pack(anchor="w")
-        self.preset_name_entry = ctk.CTkEntry(e_in, font=("Segoe UI", 11), height=30, placeholder_text="VD: 🎵 Nhạc MP3 320k Studio")
-        self.preset_name_entry.pack(fill="x", pady=(2, 8))
-
-        mode_row = ctk.CTkFrame(e_in, fg_color="transparent")
-        mode_row.pack(fill="x", pady=(0, 8))
-        ctk.CTkLabel(mode_row, text="Loại tải:", font=("Segoe UI", 11)).pack(side="left", padx=(0, 10))
-        self.preset_mode_seg = ctk.CTkSegmentedButton(mode_row, values=["🎬 Video + Âm thanh", "🎵 Chỉ lấy Âm thanh"], command=self.on_preset_mode_changed, height=28)
-        self.preset_mode_seg.set("🎬 Video + Âm thanh")
-        self.preset_mode_seg.pack(side="right", fill="x", expand=True)
-
-        grid_p = ctk.CTkFrame(e_in, fg_color="transparent")
-        grid_p.pack(fill="x", pady=(0, 8))
-        grid_p.grid_columnconfigure((0, 1), weight=1)
-
-        ctk.CTkLabel(grid_p, text="Chất lượng Video:", font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w")
-        ctk.CTkLabel(grid_p, text="Định dạng Video:", font=("Segoe UI", 10)).grid(row=0, column=1, sticky="w", padx=(6, 0))
-
-        self.preset_quality_combo = ctk.CTkComboBox(grid_p, values=["🌟 Tốt nhất có thể (Gốc)", "🎬 8K Ultra HD (4320p)", "🎬 4K Ultra HD (2160p)", "📺 2K Quad HD (1440p)", "📺 Full HD 1080p (60fps)", "📺 Full HD 1080p", "📱 HD 720p (60fps)", "📱 HD 720p", "📱 SD 480p", "⚡ Thấp 360p"], height=28)
-        self.preset_quality_combo.grid(row=1, column=0, sticky="ew", padx=(0, 3), pady=(0, 6))
-
-        self.preset_fmt_combo = ctk.CTkComboBox(grid_p, values=["MP4 (Khuyên dùng)", "MKV (Chất lượng gốc)", "WEBM", "MOV", "AVI"], height=28)
-        self.preset_fmt_combo.grid(row=1, column=1, sticky="ew", padx=(3, 0), pady=(0, 6))
-
-        ctk.CTkLabel(grid_p, text="Bitrate Âm thanh (Audio Codec):", font=("Segoe UI", 10)).grid(row=2, column=0, sticky="w")
-        ctk.CTkLabel(grid_p, text="Định dạng Âm thanh:", font=("Segoe UI", 10)).grid(row=2, column=1, sticky="w", padx=(6, 0))
-
-        self.preset_audio_combo = ctk.CTkComboBox(grid_p, values=["MP3 - 320 kbps (Cực cao)", "MP3 - 256 kbps", "MP3 - 192 kbps", "MP3 - 128 kbps", "M4A / AAC (Gốc)", "FLAC (Lossless)", "WAV", "OPUS"], height=28)
-        self.preset_audio_combo.grid(row=3, column=0, sticky="ew", padx=(0, 3))
-
-        self.preset_audio_fmt_combo = ctk.CTkComboBox(grid_p, values=["MP3", "M4A", "FLAC", "WAV", "OPUS"], height=28)
-        self.preset_audio_fmt_combo.grid(row=3, column=1, sticky="ew", padx=(3, 0))
-
-        # Checkboxes Preset
-        chk_p = ctk.CTkFrame(e_in, fg_color="transparent")
-        chk_p.pack(fill="x", pady=(8, 8))
-
-        self.p_thumb_cb = ctk.CTkCheckBox(chk_p, text="🖼️ Nhúng Ảnh Bìa (Thumbnail)", font=("Segoe UI", 10))
-        self.p_thumb_cb.select()
-        self.p_thumb_cb.pack(side="left", padx=(0, 10))
-
-        self.p_meta_cb = ctk.CTkCheckBox(chk_p, text="🏷️ Gắn Thẻ Metadata", font=("Segoe UI", 10))
-        self.p_meta_cb.select()
-        self.p_meta_cb.pack(side="left", padx=(0, 10))
-
-        self.p_sub_cb = ctk.CTkCheckBox(chk_p, text="💬 Tải & Nhúng Phụ Đề", font=("Segoe UI", 10))
-        self.p_sub_cb.pack(side="left")
-
-        # Nút Hành động cho Preset
-        btn_act_row = ctk.CTkFrame(scroll, fg_color="transparent")
-        btn_act_row.pack(fill="x", pady=(0, 10))
-
-        self.btn_save_preset = ctk.CTkButton(
-            btn_act_row,
-            text="💾 LƯU / CẬP NHẬT PRESET NÀY",
-            height=36,
-            command=self.on_save_preset_clicked,
-            font=("Segoe UI", 11, "bold"),
-            fg_color="#10B981",
-            hover_color="#059669"
-        )
-        self.btn_save_preset.pack(side="left", fill="x", expand=True, padx=(0, 6))
-
-        self.btn_del_preset = ctk.CTkButton(
-            btn_act_row,
-            text="🗑️ Xóa Preset",
-            width=100,
-            height=36,
-            command=self.on_delete_preset_clicked,
-            font=("Segoe UI", 11, "bold"),
-            fg_color="#EF4444",
-            hover_color="#DC2626"
-        )
-        self.btn_del_preset.pack(side="right")
-
-    # =========================================================================
-    # TAB 3: PHỤ TRỢ & CẬP NHẬT (FFMPEG & YT-DLP CORE)
+    # TAB 2: PHỤ TRỢ & CẬP NHẬT (FFMPEG & YT-DLP CORE)
     # =========================================================================
     def _setup_tab_tools(self):
         scroll = ctk.CTkScrollableFrame(self.tab_tools, fg_color="transparent")
@@ -384,7 +270,7 @@ class SettingsView(ctk.CTkFrame):
         self.auto_check_cb.pack(anchor="w")
 
     # =========================================================================
-    # TAB 4: BẢN QUYỀN PRO
+    # TAB 3: BẢN QUYỀN PRO
     # =========================================================================
     def _setup_tab_license(self):
         scroll = ctk.CTkScrollableFrame(self.tab_license, fg_color="transparent")
@@ -484,13 +370,10 @@ class SettingsView(ctk.CTkFrame):
         else:
             self.clip_cb.deselect()
 
-        # 2. Tab Presets
-        self.refresh_presets_dropdown()
-
-        # 3. Tab Tools
+        # 2. Tab Tools
         self.refresh_tools_status()
 
-        # 4. Tab License
+        # 3. Tab License
         self.refresh_license_display()
 
     # --- Handlers Tab General ---
@@ -563,117 +446,6 @@ class SettingsView(ctk.CTkFrame):
 
         if show_dialog:
             msgbox.showinfo("Thông báo", "Đã lưu cài đặt chung và DNS vượt chặn thành công!")
-
-    # --- Handlers Tab Presets ---
-    def refresh_presets_dropdown(self):
-        presets = self.config_manager.get_presets()
-        names = [p.get("name", "Preset") for p in presets]
-        self.preset_select_combo.configure(values=names)
-        if names:
-            self.preset_select_combo.set(names[0])
-            self.on_preset_picked_in_editor(names[0])
-
-    def on_preset_picked_in_editor(self, choice):
-        p = self.config_manager.get_preset_by_name(choice)
-        if not p:
-            return
-
-        self.preset_name_entry.delete(0, "end")
-        self.preset_name_entry.insert(0, p.get("name", ""))
-
-        mode = p.get("mode", "video")
-        if mode == "audio":
-            self.preset_mode_seg.set("🎵 Chỉ lấy Âm thanh")
-        else:
-            self.preset_mode_seg.set("🎬 Video + Âm thanh")
-        self.on_preset_mode_changed(self.preset_mode_seg.get())
-
-        if p.get("quality"):
-            self.preset_quality_combo.set(p["quality"])
-        if p.get("format"):
-            self.preset_fmt_combo.set(p["format"])
-        if p.get("audio_codec"):
-            self.preset_audio_combo.set(p["audio_codec"])
-
-        if p.get("embed_thumbnail", True):
-            self.p_thumb_cb.select()
-        else:
-            self.p_thumb_cb.deselect()
-
-        if p.get("add_metadata", True):
-            self.p_meta_cb.select()
-        else:
-            self.p_meta_cb.deselect()
-
-        if p.get("embed_subtitles", True):
-            self.p_sub_cb.select()
-        else:
-            self.p_sub_cb.deselect()
-
-    def on_preset_mode_changed(self, value):
-        if "Âm thanh" in value:
-            self.preset_quality_combo.configure(state="disabled")
-            self.preset_fmt_combo.configure(state="disabled")
-            self.preset_audio_combo.configure(state="normal")
-            self.preset_audio_fmt_combo.configure(state="normal")
-            self.p_sub_cb.configure(state="disabled")
-        else:
-            self.preset_quality_combo.configure(state="normal")
-            self.preset_fmt_combo.configure(state="normal")
-            self.preset_audio_combo.configure(state="normal")
-            self.preset_audio_fmt_combo.configure(state="disabled")
-            self.p_sub_cb.configure(state="normal")
-
-    def on_new_preset_clicked(self):
-        self.preset_name_entry.delete(0, "end")
-        self.preset_name_entry.insert(0, "Mẫu Preset Mới")
-        self.preset_mode_seg.set("🎬 Video + Âm thanh")
-        self.on_preset_mode_changed("🎬 Video + Âm thanh")
-        self.preset_quality_combo.set("🌟 Tốt nhất có thể (Gốc)")
-        self.preset_fmt_combo.set("MP4 (Khuyên dùng)")
-        self.preset_audio_combo.set("MP3 - 320 kbps (Cực cao)")
-        self.p_thumb_cb.select()
-        self.p_meta_cb.select()
-        self.p_sub_cb.select()
-        self.preset_name_entry.focus()
-
-    def on_save_preset_clicked(self, show_dialog: bool = True):
-        name = self.preset_name_entry.get().strip()
-        if not name:
-            if show_dialog:
-                msgbox.showwarning("Cảnh báo", "Vui lòng nhập tên cho Cài Đặt Sẵn (Preset)!")
-            return
-
-        is_audio = ("Âm thanh" in self.preset_mode_seg.get())
-        new_p = {
-            "name": name,
-            "mode": "audio" if is_audio else "video",
-            "quality": self.preset_quality_combo.get(),
-            "format": self.preset_fmt_combo.get() if not is_audio else self.preset_audio_fmt_combo.get(),
-            "audio_codec": self.preset_audio_combo.get(),
-            "embed_thumbnail": bool(self.p_thumb_cb.get()),
-            "add_metadata": bool(self.p_meta_cb.get()),
-            "embed_subtitles": bool(self.p_sub_cb.get()) if not is_audio else False
-        }
-
-        self.config_manager.add_or_update_preset(new_p)
-        self.refresh_presets_dropdown()
-        self.preset_select_combo.set(name)
-        if show_dialog:
-            msgbox.showinfo("Thành công", f"Đã lưu Cài Đặt Sẵn: '{name}' thành công!")
-
-    def on_delete_preset_clicked(self, confirm: bool = True):
-        name = self.preset_select_combo.get()
-        if not name:
-            return
-        ans = True
-        if confirm:
-            ans = msgbox.askyesno("Xác nhận xóa", f"Bạn có chắc chắn muốn xóa Cài Đặt Sẵn '{name}' không?")
-        if ans:
-            self.config_manager.delete_preset(name)
-            self.refresh_presets_dropdown()
-            if confirm:
-                msgbox.showinfo("Đã xóa", f"Đã xóa preset '{name}' thành công.")
 
     # --- Handlers Tab Tools ---
     def refresh_tools_status(self):

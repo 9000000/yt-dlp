@@ -1,6 +1,6 @@
 """
 Module Quản lý Cấu hình Ứng dụng (Config Manager).
-Lưu trữ và đồng bộ cài đặt người dùng vào config.json, bao gồm cấu hình DNS và danh sách Cài Đặt Sẵn (Presets).
+Lưu trữ và đồng bộ cài đặt người dùng vào config.json, bao gồm cấu hình DNS và danh sách Cài Đặt Sẵn Chuyên Sâu (Presets).
 """
 
 import os
@@ -45,57 +45,122 @@ DEFAULT_DOWNLOAD_PRESETS = [
     {
         "id": "best_video",
         "name": "🌟 Video MP4 (Chất lượng gốc cao nhất)",
+        "description": "Tải video gốc với độ phân giải cao nhất, nhúng thumbnail, metadata và phụ đề tiếng Việt/Anh.",
         "mode": "video",
         "quality": "🌟 Tốt nhất có thể (Gốc)",
         "format": "MP4 (Khuyên dùng)",
         "audio_codec": "MP3 - 320 kbps (Cực cao)",
         "embed_thumbnail": True,
         "add_metadata": True,
-        "embed_subtitles": True
+        "embed_subtitles": True,
+        "sub_langs": "vi,en",
+        "auto_subs": True,
+        "concurrent_fragments": 4,
+        "video_codec": "Tự động (Tối ưu)",
+        "fps_prefer": "60fps (Mượt mà)",
+        "split_chapters": False,
+        "ratelimit": "Không giới hạn",
+        "retries": 10
     },
     {
         "id": "music_mp3_320",
         "name": "🎵 Nhạc MP3 320kbps (Studio Master)",
+        "description": "Trích xuất âm thanh chuẩn Studio 320kbps, nhúng bìa album và thẻ nghệ sĩ/bài hát.",
         "mode": "audio",
         "quality": "🌟 Tốt nhất có thể (Gốc)",
         "format": "MP3",
         "audio_codec": "MP3 - 320 kbps (Cực cao)",
         "embed_thumbnail": True,
         "add_metadata": True,
-        "embed_subtitles": False
+        "embed_subtitles": False,
+        "sub_langs": "",
+        "auto_subs": False,
+        "concurrent_fragments": 4,
+        "video_codec": "Không áp dụng",
+        "fps_prefer": "Mặc định",
+        "split_chapters": False,
+        "ratelimit": "Không giới hạn",
+        "retries": 10
     },
     {
         "id": "video_4k_uhd",
-        "name": "🎬 Video 4K Ultra HD (2160p)",
+        "name": "🎬 Video 4K Ultra HD (2160p - 60fps)",
+        "description": "Ưu tiên độ phân giải 4K 2160p 60fps sắc nét nhất, tải đa luồng tốc độ cao.",
         "mode": "video",
         "quality": "🎬 4K Ultra HD (2160p)",
         "format": "MP4 (Khuyên dùng)",
         "audio_codec": "MP3 - 320 kbps (Cực cao)",
         "embed_thumbnail": True,
         "add_metadata": True,
-        "embed_subtitles": True
+        "embed_subtitles": True,
+        "sub_langs": "vi,en",
+        "auto_subs": True,
+        "concurrent_fragments": 8,
+        "video_codec": "H.264 / AVC1 (Tương thích)",
+        "fps_prefer": "60fps (Mượt mà)",
+        "split_chapters": False,
+        "ratelimit": "Không giới hạn",
+        "retries": 10
     },
     {
         "id": "video_1080p_fhd",
-        "name": "📺 Full HD 1080p (Tiêu chuẩn)",
+        "name": "📺 Full HD 1080p (Tiêu chuẩn TV & PC)",
+        "description": "Chuẩn Full HD 1080p thông dụng, tương thích mọi thiết bị điện thoại, TV, máy tính.",
         "mode": "video",
         "quality": "📺 Full HD 1080p",
         "format": "MP4 (Khuyên dùng)",
         "audio_codec": "MP3 - 320 kbps (Cực cao)",
         "embed_thumbnail": True,
         "add_metadata": True,
-        "embed_subtitles": True
+        "embed_subtitles": True,
+        "sub_langs": "vi,en",
+        "auto_subs": True,
+        "concurrent_fragments": 4,
+        "video_codec": "H.264 / AVC1 (Tương thích)",
+        "fps_prefer": "Mặc định",
+        "split_chapters": False,
+        "ratelimit": "Không giới hạn",
+        "retries": 10
     },
     {
         "id": "video_720p_lite",
         "name": "📱 HD 720p (Tiết kiệm dung lượng)",
+        "description": "Tải siêu nhanh, tốn ít dung lượng và tài nguyên mạng, phù hợp xem trên điện thoại.",
         "mode": "video",
         "quality": "📱 HD 720p",
         "format": "MP4 (Khuyên dùng)",
         "audio_codec": "MP3 - 192 kbps",
         "embed_thumbnail": True,
         "add_metadata": False,
-        "embed_subtitles": False
+        "embed_subtitles": False,
+        "sub_langs": "",
+        "auto_subs": False,
+        "concurrent_fragments": 4,
+        "video_codec": "Tự động (Tối ưu)",
+        "fps_prefer": "Mặc định",
+        "split_chapters": False,
+        "ratelimit": "Không giới hạn",
+        "retries": 10
+    },
+    {
+        "id": "podcast_split_chapters",
+        "name": "🎙️ Podcast & Sách Nói (Tự động tách Chapter)",
+        "description": "Tải trích xuất âm thanh đồng thời tự động chia nhỏ file theo từng chương mục thời gian.",
+        "mode": "audio",
+        "quality": "🌟 Tốt nhất có thể (Gốc)",
+        "format": "M4A / AAC (Gốc)",
+        "audio_codec": "M4A / AAC (Gốc)",
+        "embed_thumbnail": True,
+        "add_metadata": True,
+        "embed_subtitles": False,
+        "sub_langs": "",
+        "auto_subs": False,
+        "concurrent_fragments": 4,
+        "video_codec": "Không áp dụng",
+        "fps_prefer": "Mặc định",
+        "split_chapters": True,
+        "ratelimit": "Không giới hạn",
+        "retries": 10
     }
 ]
 

@@ -48,6 +48,12 @@ class DownloadTask:
         playlist_items: str = None,
         direct_url: str = None,
         dns_servers: list = None,
+        concurrent_fragments: int = 4,
+        ratelimit: str = "",
+        auto_subs: bool = True,
+        split_chapters: bool = False,
+        video_codec: str = "",
+        fps_prefer: str = "",
         on_progress: Callable[[dict], None] = None,
         on_status: Callable[[str], None] = None,
         on_finish: Callable[[bool, str, str], None] = None
@@ -69,6 +75,12 @@ class DownloadTask:
         self.playlist_items = playlist_items
         self.direct_url = direct_url
         self.dns_servers = dns_servers or []
+        self.concurrent_fragments = concurrent_fragments or 4
+        self.ratelimit = ratelimit
+        self.auto_subs = auto_subs
+        self.split_chapters = split_chapters
+        self.video_codec = video_codec
+        self.fps_prefer = fps_prefer
 
         self.on_progress = on_progress
         self.on_status = on_status
@@ -241,13 +253,20 @@ class DownloadTask:
             'quiet': True,
             'no_warnings': True,
             'logger': QuietYTDLPLogger(),
-            'concurrent_fragment_downloads': 4,
+            'concurrent_fragment_downloads': self.concurrent_fragments,
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                 'Accept-Language': 'vi,en;q=0.9',
                 'Sec-Fetch-Mode': 'navigate'
             }
         }
+
+        if self.ratelimit and "MB/s" in self.ratelimit:
+            try:
+                mb = float(self.ratelimit.replace("MB/s", "").strip())
+                base_opts['ratelimit'] = int(mb * 1024 * 1024)
+            except Exception:
+                pass
 
         # Tích hợp YouTube Botguard / PO Token Provider
         if ("youtube.com" in self.url.lower() or "youtu.be" in self.url.lower()) and self.pot_enabled:
@@ -269,6 +288,9 @@ class DownloadTask:
             base_opts['dns_servers'] = self.dns_servers
 
         postprocessors = []
+
+        if self.split_chapters:
+            postprocessors.append({'key': 'FFmpegSplitChapters'})
 
         if self.audio_only:
             audio_text = self.audio_codec.lower()
@@ -312,6 +334,8 @@ class DownloadTask:
         if self.embed_subs and not self.audio_only:
             langs = [l.strip() for l in self.sub_langs.split(',') if l.strip()]
             base_opts['writesubtitles'] = True
+            if self.auto_subs:
+                base_opts['writeautomaticsub'] = True
             base_opts['subtitleslangs'] = langs
             base_opts['embedsubtitles'] = True
 

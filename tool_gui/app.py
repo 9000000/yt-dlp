@@ -14,7 +14,7 @@ from tool_gui.license_manager import LicenseManager
 from tool_gui.updater import UpdaterManager
 from tool_gui.views.activation_view import ActivationView
 from tool_gui.views.download_view import DownloadView
-from tool_gui.views.tools_view import ToolsView
+from tool_gui.views.presets_view import PresetsView
 from tool_gui.views.settings_view import SettingsView
 from tool_gui.views.log_view import LogView
 
@@ -65,7 +65,7 @@ class ToolDLApp(ctk.CTk):
         # 1. SIDEBAR ĐIỀU HƯỚNG BÊN TRÁI
         self.sidebar = ctk.CTkFrame(self, width=220, corner_radius=0)
         self.sidebar.grid(row=0, column=0, sticky="nsew")
-        self.sidebar.grid_rowconfigure(6, weight=1)
+        self.sidebar.grid_rowconfigure(7, weight=1)
 
         # Logo / Brand
         logo_lbl = ctk.CTkLabel(
@@ -84,9 +84,10 @@ class ToolDLApp(ctk.CTk):
         )
         sub_logo.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="w")
 
-        # Các nút điều hướng tinh gọn (3 Mục Chính Hợp Nhất)
+        # Các nút điều hướng tinh gọn (4 Mục Rõ Ràng)
         nav_items = [
             ("download", "📥 Tải & Duyệt Video", self.show_download_view),
+            ("presets", "🎛️ Cấu Hình Sẵn (Presets)", self.show_presets_view),
             ("settings", "⚙️ Cài Đặt & Phụ Trợ", self.show_settings_view),
             ("logs", "📜 Nhật Ký Hoạt Động", self.show_log_view),
         ]
@@ -114,7 +115,7 @@ class ToolDLApp(ctk.CTk):
             font=("Segoe UI", 11, "bold"),
             text_color="#10B981"
         )
-        self.lic_badge.grid(row=7, column=0, padx=20, pady=(10, 15), sticky="w")
+        self.lic_badge.grid(row=8, column=0, padx=20, pady=(10, 15), sticky="w")
 
         # 2. KHUNG NỘI DUNG CHÍNH (CONTAINER BÊN PHẢI)
         self.container = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
@@ -125,6 +126,12 @@ class ToolDLApp(ctk.CTk):
         # Khởi tạo sẵn các Views
         self.log_view = LogView(self.container)
         self.download_view = DownloadView(self.container, self.config_manager, log_callback=self.log_view.append_log)
+        self.presets_view = PresetsView(
+            self.container,
+            self.config_manager,
+            on_presets_updated=self.download_view.refresh_presets_in_view,
+            log_callback=self.log_view.append_log
+        )
         self.settings_view = SettingsView(
             self.container,
             self.config_manager,
@@ -159,6 +166,7 @@ class ToolDLApp(ctk.CTk):
         self.sidebar.grid()
         self.lic_badge.configure(text="🟢 Bản quyền: Đã kích hoạt", text_color="#10B981")
         self.settings_view.load_all_settings()
+        self.presets_view.refresh_presets_list()
         self.show_download_view()
 
     def _hide_all_views(self):
@@ -166,6 +174,7 @@ class ToolDLApp(ctk.CTk):
         for v in [
             self.activation_view,
             self.download_view,
+            self.presets_view,
             self.settings_view,
             self.log_view
         ]:
@@ -183,6 +192,12 @@ class ToolDLApp(ctk.CTk):
         self._hide_all_views()
         self._set_active_nav("download")
         self.download_view.grid(row=0, column=0, sticky="nsew")
+
+    def show_presets_view(self):
+        self._hide_all_views()
+        self._set_active_nav("presets")
+        self.presets_view.refresh_presets_list()
+        self.presets_view.grid(row=0, column=0, sticky="nsew")
 
     def show_tools_view(self):
         self.show_settings_view()

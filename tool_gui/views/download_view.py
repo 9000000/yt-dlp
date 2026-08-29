@@ -282,7 +282,19 @@ class DownloadView(ctk.CTkFrame):
             height=26,
             font=("Segoe UI", 9)
         )
-        self.preset_combo.pack(side="right", fill="x", expand=True, padx=(4, 0))
+        self.preset_combo.pack(side="left", fill="x", expand=True, padx=(4, 4))
+
+        self.btn_save_curr_preset = ctk.CTkButton(
+            p_row,
+            text="💾 Lưu mẫu",
+            width=68,
+            height=26,
+            command=self.on_quick_save_preset,
+            fg_color="#64748B",
+            hover_color="#475569",
+            font=("Segoe UI", 9, "bold")
+        )
+        self.btn_save_curr_preset.pack(side="right")
 
         self.mode_var = ctk.StringVar(value="video")
         self.mode_seg = ctk.CTkSegmentedButton(opt_inner, values=["🎬 Video + Tiếng", "🎵 Chỉ lấy Âm thanh"], command=self.on_mode_changed, height=26)
@@ -808,6 +820,36 @@ class DownloadView(ctk.CTkFrame):
 
         self.log(f"[Preset] Đã nạp cấu hình mẫu: {p.get('name')}")
 
+    def on_quick_save_preset(self):
+        import tkinter.simpledialog as simpledialog
+        name = simpledialog.askstring("Lưu Cài Đặt Sẵn", "Nhập tên cho cấu hình Preset mới:")
+        if not name or not name.strip():
+            return
+        name = name.strip()
+        is_audio = (self.mode_var.get() == "audio")
+        new_p = {
+            "name": name,
+            "description": "Lưu nhanh từ màn hình tải video",
+            "mode": "audio" if is_audio else "video",
+            "quality": self.quality_combo.get(),
+            "format": self.fmt_combo.get() if not is_audio else "MP3",
+            "audio_codec": self.audio_combo.get(),
+            "concurrent_fragments": 4,
+            "ratelimit": "Không giới hạn (Tối đa)",
+            "video_codec": "Tự động (Tối ưu)",
+            "fps_prefer": "60fps (Mượt mà)",
+            "embed_subtitles": bool(self.sub_check.get()) if not is_audio else False,
+            "auto_subs": True,
+            "sub_langs": "vi,en",
+            "embed_thumbnail": bool(self.thumb_check.get()),
+            "add_metadata": bool(self.meta_check.get()),
+            "split_chapters": False
+        }
+        self.config_manager.add_or_update_preset(new_p)
+        self.refresh_presets_in_view()
+        self.preset_combo.set(name)
+        msgbox.showinfo("Thành công", f"Đã tạo và lưu Cài Đặt Sẵn '{name}' thành công!")
+
     def on_browse_dir(self):
         folder = filedialog.askdirectory(initialdir=self.dir_entry.get())
         if folder:
@@ -846,6 +888,15 @@ class DownloadView(ctk.CTkFrame):
         pot_url = self.config_manager.get("youtube_pot_provider_url", "")
         dns_servers = self.config_manager.get_dns_servers()
 
+        active_p_name = self.preset_combo.get() if hasattr(self, 'preset_combo') else ""
+        p = self.config_manager.get_preset_by_name(active_p_name) or {}
+        concurrent_fragments = p.get("concurrent_fragments", 4)
+        ratelimit = p.get("ratelimit", "")
+        auto_subs = p.get("auto_subs", True)
+        split_chapters = p.get("split_chapters", False)
+        video_codec = p.get("video_codec", "")
+        fps_prefer = p.get("fps_prefer", "")
+
         direct_url = None
         if self.current_meta:
             if audio_only and self.current_meta.get("direct_audio_url"):
@@ -876,6 +927,12 @@ class DownloadView(ctk.CTkFrame):
             pot_provider_url=pot_url,
             direct_url=direct_url,
             dns_servers=dns_servers,
+            concurrent_fragments=concurrent_fragments,
+            ratelimit=ratelimit,
+            auto_subs=auto_subs,
+            split_chapters=split_chapters,
+            video_codec=video_codec,
+            fps_prefer=fps_prefer,
             on_progress=self._on_download_progress,
             on_status=self._on_download_status,
             on_finish=self._on_download_finished
@@ -1046,6 +1103,15 @@ class DownloadView(ctk.CTkFrame):
                 success_box[0] = success
                 finished_event.set()
 
+            active_p_name = self.batch_preset_combo.get() if hasattr(self, 'batch_preset_combo') else ""
+            p = self.config_manager.get_preset_by_name(active_p_name) or {}
+            concurrent_fragments = p.get("concurrent_fragments", 4)
+            ratelimit = p.get("ratelimit", "")
+            auto_subs = p.get("auto_subs", True)
+            split_chapters = p.get("split_chapters", False)
+            video_codec = p.get("video_codec", "")
+            fps_prefer = p.get("fps_prefer", "")
+
             task = DownloadTask(
                 url=url,
                 output_dir=out_dir,
@@ -1059,6 +1125,12 @@ class DownloadView(ctk.CTkFrame):
                 pot_provider_url=pot_url,
                 playlist_items=playlist_range,
                 dns_servers=dns_servers,
+                concurrent_fragments=concurrent_fragments,
+                ratelimit=ratelimit,
+                auto_subs=auto_subs,
+                split_chapters=split_chapters,
+                video_codec=video_codec,
+                fps_prefer=fps_prefer,
                 on_finish=on_finish
             )
             task.start()
