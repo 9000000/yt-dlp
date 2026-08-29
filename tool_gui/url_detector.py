@@ -1,7 +1,6 @@
 """
 Module Tự động Nhận diện & Trích xuất Metadata Liên kết (URL Detector & Extractor).
-Hỗ trợ TikTok (kèm fallback TikWM), Facebook, YouTube, Bilibili, Instagram, và hơn 1000 nền tảng.
-Tự động hỗ trợ Cookie trình duyệt và Tệp cookies.txt trực tiếp.
+Hỗ trợ TikTok (kèm fallback TikWM), Facebook, YouTube (kèm PO Token / Multi-client Botguard bypass), Bilibili, Instagram, và hơn 1000 nền tảng.
 """
 
 import os
@@ -130,10 +129,17 @@ class URLDetector:
         return False, None, "Không thể lấy dữ liệu TikTok."
 
     @classmethod
-    def fetch_metadata(cls, url: str, cookie_browser: str = "none", cookie_file: str = "") -> tuple[bool, dict | None, str]:
+    def fetch_metadata(
+        cls,
+        url: str,
+        cookie_browser: str = "none",
+        cookie_file: str = "",
+        pot_enabled: bool = True,
+        pot_provider_url: str = ""
+    ) -> tuple[bool, dict | None, str]:
         """
         Trích xuất thông tin chi tiết video/playlist từ URL bằng yt-dlp và bộ giải mã phụ trợ.
-        Tự động hỗ trợ cookie file (.txt) hoặc cookie trình duyệt với cơ chế an toàn.
+        Tích hợp hỗ trợ YouTube PO Token / Botguard bypass.
         """
         plat = cls.detect_platform(url)
 
@@ -150,6 +156,19 @@ class URLDetector:
                     'Sec-Fetch-Mode': 'navigate'
                 }
             }
+
+            # Tích hợp YouTube Botguard / PO Token Provider & Multi-client fallback
+            if plat == "YouTube" and pot_enabled:
+                extractor_args = {
+                    'youtube': {
+                        'player_client': ['web', 'android', 'ios']
+                    }
+                }
+                if pot_provider_url and pot_provider_url.startswith("http"):
+                    extractor_args['youtubepot-bgutil'] = {
+                        'provider_url': [pot_provider_url]
+                    }
+                base_opts['extractor_args'] = extractor_args
 
             info = None
             last_err = ""
@@ -174,7 +193,7 @@ class URLDetector:
                 except Exception as e:
                     last_err = str(e)
 
-            # 3. Thử chế độ chuẩn không cookie
+            # 3. Thử chế độ chuẩn
             if not info:
                 try:
                     with yt_dlp.YoutubeDL(base_opts) as ydl:
@@ -227,7 +246,7 @@ class URLDetector:
                 return True, res, msg
 
         if plat == "Facebook":
-            return False, None, "Video Facebook này yêu cầu phiên đăng nhập (Cookie).\n👉 Hãy chọn 'Tệp Cookie (.txt)' hoặc đóng trình duyệt Chrome/Edge rồi chọn lại để xác thực."
+            return False, None, "Video Facebook này yêu cầu phiên đăng nhập (Cookie).\n👉 Hãy dùng tệp cookies.txt hoặc chọn trình duyệt trong Cài đặt để xác thực."
 
         return False, None, "Không thể lấy thông tin từ liên kết này. Vui lòng kiểm tra lại đường dẫn."
 

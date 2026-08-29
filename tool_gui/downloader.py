@@ -1,7 +1,7 @@
 """
 Lõi Xử lý & Tải Video Đa luồng Bất đồng bộ (Downloader Engine).
 Hỗ trợ đầy đủ các mức chất lượng (8K/4K/2K/1080p60/720p), bitrate âm thanh,
-gắn thẻ metadata, nhúng thumbnail, phụ đề, tăng tốc đa luồng và tệp Cookie (.txt).
+gắn thẻ metadata, nhúng thumbnail, phụ đề, tăng tốc đa luồng và tích hợp PO Token Botguard bypass.
 """
 
 import os
@@ -36,6 +36,8 @@ class DownloadTask:
         add_metadata: bool = True,
         cookie_browser: str = "none",
         cookie_file: str = "",
+        pot_enabled: bool = True,
+        pot_provider_url: str = "",
         playlist_items: str = None,
         direct_url: str = None,
         on_progress: Callable[[dict], None] = None,
@@ -54,6 +56,8 @@ class DownloadTask:
         self.add_metadata = add_metadata
         self.cookie_browser = cookie_browser
         self.cookie_file = cookie_file
+        self.pot_enabled = pot_enabled
+        self.pot_provider_url = pot_provider_url
         self.playlist_items = playlist_items
         self.direct_url = direct_url
 
@@ -235,6 +239,19 @@ class DownloadTask:
             }
         }
 
+        # Tích hợp YouTube Botguard / PO Token Provider
+        if ("youtube.com" in self.url.lower() or "youtu.be" in self.url.lower()) and self.pot_enabled:
+            extractor_args = {
+                'youtube': {
+                    'player_client': ['web', 'android', 'ios']
+                }
+            }
+            if self.pot_provider_url and self.pot_provider_url.startswith("http"):
+                extractor_args['youtubepot-bgutil'] = {
+                    'provider_url': [self.pot_provider_url]
+                }
+            base_opts['extractor_args'] = extractor_args
+
         if ffmpeg_path:
             base_opts['ffmpeg_location'] = ffmpeg_path
 
@@ -290,10 +307,8 @@ class DownloadTask:
 
         ydl_opts = dict(base_opts)
 
-        # 1. Tùy chọn file cookie
         if self.cookie_file and os.path.exists(self.cookie_file):
             ydl_opts['cookiefile'] = self.cookie_file
-        # 2. Tùy chọn cookie trình duyệt
         elif self.cookie_browser and self.cookie_browser not in ["none", "file", ""]:
             ydl_opts['cookiesfrombrowser'] = (self.cookie_browser,)
 

@@ -1,6 +1,6 @@
 """
 Script Đóng Gói Ứng Dụng Thành Bản Portable ZIP Độc Lập (Build Portable Package).
-Sử dụng PyInstaller đóng gói toàn bộ mã nguồn, thư viện và FFmpeg thành file ToolDL_Portable.zip.
+Sử dụng PyInstaller đóng gói toàn bộ mã nguồn, thư viện, PO Token Plugin và FFmpeg thành file ToolDL_Portable.zip.
 """
 
 import os
@@ -41,7 +41,6 @@ def run_pyinstaller():
     """Chạy PyInstaller để đóng gói thành thư mục ứng dụng độc lập."""
     log("Bắt đầu biên dịch ứng dụng bằng PyInstaller...")
 
-    # Xóa thư mục build cũ nếu có
     if PORTABLE_APP_DIR.exists():
         shutil.rmtree(PORTABLE_APP_DIR, ignore_errors=True)
 
@@ -53,6 +52,8 @@ def run_pyinstaller():
         "--clean",
         "--collect-all=customtkinter",
         "--collect-all=yt_dlp",
+        "--collect-all=yt_dlp_plugins",
+        "--collect-all=curl_cffi",
         "--collect-all=PIL",
         "--hidden-import=tool_gui",
         "--hidden-import=tool_gui.license_manager",
@@ -89,7 +90,15 @@ def copy_assets():
             shutil.rmtree(dst_bin)
         shutil.copytree(src_bin, dst_bin)
 
-    # 2. Tạo file Hướng dẫn sử dụng
+    # 2. Sao chép thư mục yt_dlp_plugins/ nếu có
+    src_plugins = ROOT_DIR / "yt_dlp_plugins"
+    dst_plugins = PORTABLE_APP_DIR / "_internal" / "yt_dlp_plugins"
+    if src_plugins.exists():
+        if dst_plugins.exists():
+            shutil.rmtree(dst_plugins)
+        shutil.copytree(src_plugins, dst_plugins)
+
+    # 3. Tạo file Hướng dẫn sử dụng
     readme_txt = PORTABLE_APP_DIR / "HUONG_DAN_SU_DUNG.txt"
     with open(readme_txt, "w", encoding="utf-8") as f:
         f.write("""========================================================================
@@ -107,9 +116,10 @@ def copy_assets():
 
 3. TÍNH NĂNG NỔI BẬT:
    - Tự động nhận diện link video từ khay nhớ tạm (Clipboard).
-   - Tải video 4K / 1080p / 720p / Âm thanh MP3 320kbps từ YouTube, TikTok,
-     Facebook, Instagram, Bilibili, Douyin và hàng trăm trang web khác.
+   - Tải video 8K / 4K / 1080p / Âm thanh MP3 320kbps từ YouTube, TikTok,
+     Facebook, Instagram, Bilibili, Douyin và hơn 1000 trang web khác.
    - Đã tích hợp sẵn bộ xử lý FFmpeg bản mới nhất.
+   - Tự động chống chặn YouTube Botguard (PO Token Provider) & TikTok HD.
    - Tự động kiểm tra và cập nhật phụ trợ.
 
 Chúc bạn có trải nghiệm tuyệt vời cùng ToolDL Pro!
@@ -118,18 +128,18 @@ Chúc bạn có trải nghiệm tuyệt vời cùng ToolDL Pro!
 
     log("✅ Đã sao chép đầy đủ phụ trợ và tài liệu hướng dẫn.")
 
-def create_zip_package():
-    """Nén thư mục thành file ToolDL_Portable.zip."""
+def create_zip():
+    """Nén thư mục thành file ZIP duy nhất để phân phối."""
     log(f"Đang nén toàn bộ thành file ZIP: {OUTPUT_ZIP.name}...")
 
     if OUTPUT_ZIP.exists():
         OUTPUT_ZIP.unlink()
 
-    with zipfile.ZipFile(OUTPUT_ZIP, 'w', zipfile.ZIP_DEFLATED) as zipf:
+    with zipfile.ZipFile(OUTPUT_ZIP, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
         for root, dirs, files in os.walk(PORTABLE_APP_DIR):
             for file in files:
                 file_path = Path(root) / file
-                arcname = file_path.relative_to(DIST_DIR)
+                arcname = file_path.relative_to(PORTABLE_APP_DIR)
                 zipf.write(file_path, arcname)
 
     size_mb = OUTPUT_ZIP.stat().st_size / (1024 * 1024)
@@ -146,8 +156,7 @@ def main():
         ensure_ffmpeg()
         run_pyinstaller()
         copy_assets()
-        create_zip_package()
-
+        create_zip()
         print("\n" + "=" * 60)
         print("✅ HOÀN TẤT ĐÓNG GÓI BẢN PORTABLE CHẠY NGAY KHÔNG CẦN CÀI ĐẶT!")
         print(f"👉 File ZIP phân phối: {OUTPUT_ZIP}")

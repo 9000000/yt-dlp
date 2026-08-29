@@ -37,6 +37,9 @@ class ConfigManager:
             "sub_lang": "vi,en",
             "browser_cookie": "none",  # none, chrome, edge, firefox, brave, opera, file
             "cookie_file_path": "",
+            "youtube_pot_enabled": True,  # Bật chống chặn Botguard PO Token của YouTube
+            "youtube_pot_provider_url": "http://127.0.0.1:4416",
+            "youtube_player_clients": "web,mweb,android,ios",
             "max_concurrent_downloads": 3
         }
 

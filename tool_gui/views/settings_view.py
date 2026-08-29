@@ -1,6 +1,6 @@
 """
 Màn hình Cài Đặt & Bản Quyền (Settings & License View).
-Tùy chỉnh giao diện, thư mục, cookies trình duyệt và quản lý bản quyền 100% Tiếng Việt.
+Tùy chỉnh giao diện, thư mục, cookies trình duyệt, cơ chế chống chặn YouTube Botguard và quản lý bản quyền 100% Tiếng Việt.
 """
 
 import customtkinter as ctk
@@ -68,10 +68,15 @@ class SettingsView(ctk.CTkFrame):
         ctk.CTkLabel(cookie_box, text="Trình duyệt trích xuất Cookie (dành cho video thành viên/hạn chế độ tuổi):", font=("Segoe UI", 12)).pack(anchor="w", pady=(0, 4))
         self.cookie_combo = ctk.CTkComboBox(
             cookie_box,
-            values=["Không dùng Cookie", "Google Chrome", "Microsoft Edge", "Mozilla Firefox", "Brave Browser", "Opera", "Cốc Cốc / Chromium"],
+            values=["Không dùng Cookie", "Google Chrome", "Microsoft Edge", "Mozilla Firefox", "Brave Browser", "Opera", "Tệp Cookie (.txt)"],
             width=250
         )
         self.cookie_combo.pack(anchor="w")
+
+        # Tùy chọn chống chặn YouTube Botguard / PO Token
+        self.pot_cb = ctk.CTkCheckBox(gen_card, text="🛡️ Bật chế độ Chống Chặn YouTube (Botguard / PO Token Provider)", font=("Segoe UI", 12))
+        self.pot_cb.select()
+        self.pot_cb.pack(anchor="w", padx=15, pady=(5, 5))
 
         # Tùy chọn tự động bắt clipboard
         self.clip_cb = ctk.CTkCheckBox(gen_card, text="Tự động nhận diện đường dẫn khi sao chép (Clipboard Monitor)", font=("Segoe UI", 12))
@@ -100,53 +105,30 @@ class SettingsView(ctk.CTkFrame):
         lic_btn_row = ctk.CTkFrame(lic_card, fg_color="transparent")
         lic_btn_row.pack(fill="x", padx=15, pady=(0, 15))
 
-        change_key_btn = ctk.CTkButton(
-            lic_btn_row,
-            text="🔄 Đổi mã kích hoạt khác",
-            command=self.on_change_key,
-            fg_color="#3B82F6",
-            hover_color="#2563EB",
-            font=("Segoe UI", 12)
-        )
-        change_key_btn.pack(side="left", padx=(0, 10))
-
-        deact_btn = ctk.CTkButton(
-            lic_btn_row,
-            text="❌ Hủy kích hoạt",
-            command=self.on_deactivate,
-            fg_color="#EF4444",
-            hover_color="#DC2626",
-            font=("Segoe UI", 12)
-        )
-        deact_btn.pack(side="left")
+        rekey_btn = ctk.CTkButton(lic_btn_row, text="🔑 Đổi License Key Mới", height=36, command=self.on_change_key, fg_color="#3B82F6", hover_color="#2563EB")
+        rekey_btn.pack(side="left", padx=(0, 10))
 
         # 3. NÚT LƯU CÀI ĐẶT
         save_btn = ctk.CTkButton(
             self.scroll,
-            text="💾 LƯU THAY ĐỔI CÀI ĐẶT",
-            height=42,
+            text="💾 LƯU CÀI ĐẶT",
+            height=44,
             command=self.save_settings,
             font=("Segoe UI", 13, "bold"),
             fg_color="#10B981",
             hover_color="#059669"
         )
-        save_btn.pack(fill="x", padx=5, pady=(0, 20))
+        save_btn.pack(fill="x", pady=10, padx=5)
 
     def load_settings(self):
-        """Đọc cài đặt hiện tại đưa lên giao diện."""
-        theme = self.config_manager.get("theme", "dark")
+        """Tải các thiết lập từ config.json."""
         theme_map = {"dark": "Tối (Dark Mode)", "light": "Sáng (Light Mode)", "system": "Theo hệ thống (System)"}
-        self.theme_combo.set(theme_map.get(theme, "Tối (Dark Mode)"))
+        t = self.config_manager.get("theme", "dark")
+        self.theme_combo.set(theme_map.get(t, "Tối (Dark Mode)"))
 
         self.dir_entry.delete(0, "end")
-        self.dir_entry.insert(0, self.config_manager.get("download_dir"))
+        self.dir_entry.insert(0, self.config_manager.get("download_dir", ""))
 
-        if self.config_manager.get("auto_detect_clipboard", True):
-            self.clip_cb.select()
-        else:
-            self.clip_cb.deselect()
-
-        cookie_val = self.config_manager.get("browser_cookie", "none")
         cookie_map = {
             "none": "Không dùng Cookie",
             "chrome": "Google Chrome",
@@ -154,40 +136,50 @@ class SettingsView(ctk.CTkFrame):
             "firefox": "Mozilla Firefox",
             "brave": "Brave Browser",
             "opera": "Opera",
-            "chromium": "Cốc Cốc / Chromium"
+            "file": "Tệp Cookie (.txt)"
         }
-        self.cookie_combo.set(cookie_map.get(cookie_val, "Không dùng Cookie"))
+        b = self.config_manager.get("browser_cookie", "none")
+        self.cookie_combo.set(cookie_map.get(b, "Không dùng Cookie"))
 
-        # Cập nhật thông tin bản quyền
-        lic_info = self.license_manager.license_info
-        if lic_info:
-            exp_str = lic_info.get("expires_str", "Vĩnh viễn (Lifetime)")
-            self.lic_status_lbl.configure(text="Trạng thái: 🟢 Đã kích hoạt bản quyền chính thức", text_color="#10B981")
-            self.lic_exp_lbl.configure(text=f"Hạn sử dụng: {exp_str}")
+        if self.config_manager.get("youtube_pot_enabled", True):
+            self.pot_cb.select()
         else:
-            self.lic_status_lbl.configure(text="Trạng thái: ⚠️ Chưa kích hoạt", text_color="#EF4444")
-            self.lic_exp_lbl.configure(text="Hạn sử dụng: Không có")
+            self.pot_cb.deselect()
+
+        if self.config_manager.get("auto_detect_clipboard", True):
+            self.clip_cb.select()
+        else:
+            self.clip_cb.deselect()
+
+        self.refresh_license_display()
+
+    def refresh_license_display(self):
+        """Cập nhật thông tin bản quyền trên giao diện."""
+        valid, msg, lic_data = self.license_manager.check_license()
+        if valid and lic_data:
+            exp_text = lic_data.get("expires_str", "Vĩnh viễn (Lifetime)")
+            self.lic_status_lbl.configure(text=f"Trạng thái: 🟢 Đã kích hoạt bản quyền PRO", text_color="#10B981")
+            self.lic_exp_lbl.configure(text=f"Hạn sử dụng: {exp_text}")
+        else:
+            self.lic_status_lbl.configure(text="Trạng thái: 🔴 Chưa kích hoạt hoặc Key hết hạn", text_color="#EF4444")
+            self.lic_exp_lbl.configure(text="Hạn sử dụng: --")
+
+    def on_theme_changed(self, choice):
+        """Thay đổi chế độ nền ngay lập tức."""
+        theme_map_rev = {"Tối (Dark Mode)": "dark", "Sáng (Light Mode)": "light", "Theo hệ thống (System)": "system"}
+        mode = theme_map_rev.get(choice, "dark")
+        ctk.set_appearance_mode(mode)
+        self.config_manager.set("theme", mode)
 
     def on_browse(self):
+        """Chọn thư mục."""
         folder = filedialog.askdirectory(initialdir=self.dir_entry.get())
         if folder:
             self.dir_entry.delete(0, "end")
             self.dir_entry.insert(0, folder)
 
-    def on_theme_changed(self, choice):
-        if "Tối" in choice:
-            ctk.set_appearance_mode("dark")
-        elif "Sáng" in choice:
-            ctk.set_appearance_mode("light")
-        else:
-            ctk.set_appearance_mode("system")
-
     def save_settings(self):
-        theme_str = "dark" if "Tối" in self.theme_combo.get() else ("light" if "Sáng" in self.theme_combo.get() else "system")
-        dl_dir = self.dir_entry.get().strip()
-        auto_clip = bool(self.clip_cb.get())
-        
-        cookie_text = self.cookie_combo.get()
+        """Lưu toàn bộ cài đặt."""
         cookie_map_rev = {
             "Không dùng Cookie": "none",
             "Google Chrome": "chrome",
@@ -195,25 +187,21 @@ class SettingsView(ctk.CTkFrame):
             "Mozilla Firefox": "firefox",
             "Brave Browser": "brave",
             "Opera": "opera",
-            "Cốc Cốc / Chromium": "chromium"
+            "Tệp Cookie (.txt)": "file"
         }
-        cookie_val = cookie_map_rev.get(cookie_text, "none")
+        b_val = cookie_map_rev.get(self.cookie_combo.get(), "none")
 
-        self.config_manager.set("theme", theme_str)
-        self.config_manager.set("download_dir", dl_dir)
-        self.config_manager.set("auto_detect_clipboard", auto_clip)
-        self.config_manager.set("browser_cookie", cookie_val)
+        self.config_manager.set("download_dir", self.dir_entry.get().strip())
+        self.config_manager.set("browser_cookie", b_val)
+        self.config_manager.set("youtube_pot_enabled", bool(self.pot_cb.get()))
+        self.config_manager.set("auto_detect_clipboard", bool(self.clip_cb.get()))
 
-        msgbox.showinfo("Thành công", "Đã lưu toàn bộ cài đặt thành công!")
+        msgbox.showinfo("Thông báo", "Đã lưu cài đặt thành công!")
 
     def on_change_key(self):
-        if self.on_reauth_callback:
-            self.on_reauth_callback()
-
-    def on_deactivate(self):
-        ans = msgbox.askyesno("Xác nhận", "Bạn có chắc chắn muốn hủy kích hoạt bản quyền trên máy này?")
+        """Hủy key cũ và chuyển về màn hình nhập key mới."""
+        ans = msgbox.askyesno("Xác nhận", "Bạn có chắc chắn muốn gỡ License Key hiện tại để nhập Key mới?")
         if ans:
             self.license_manager.deactivate()
-            msgbox.showinfo("Thông báo", "Đã hủy kích hoạt bản quyền.")
             if self.on_reauth_callback:
                 self.on_reauth_callback()
