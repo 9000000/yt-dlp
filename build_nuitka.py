@@ -154,15 +154,18 @@ def build_standalone_exe():
     out_dir = DIST_DIR / "ToolDL_App"
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # Chuẩn bị cấu hình Nuitka tối ưu cho Windows GUI
     cmd = [
         sys.executable, "-m", "nuitka",
         "--standalone",
-        "--windows-disable-console",
+        "--windows-console-mode=disable",
         "--enable-plugin=tk-inter",
+        "--enable-plugin=pywebview",
         "--include-package=customtkinter",
+        "--include-package-data=customtkinter",
         "--include-package=yt_dlp",
         "--include-package=PIL",
-        "--include-package=webview",
+        "--include-package=cryptography",
         "--include-data-file=public.key=public.key",
         "--include-data-file=config.json=config.json",
         f"--output-dir={out_dir}",
