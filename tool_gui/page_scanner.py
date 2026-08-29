@@ -20,7 +20,7 @@ class PageVideoScanner:
     """Quét và trích xuất tất cả liên kết video trên một trang web."""
 
     @staticmethod
-    def scan_webpage_for_videos(page_url: str, cookie_browser: str = "none", cookie_file: str = "") -> tuple[bool, list, str]:
+    def scan_webpage_for_videos(page_url: str, cookie_browser: str = "none", cookie_file: str = "", dns_servers: list = None) -> tuple[bool, list, str]:
         """
         Quét URL trang web và trả về danh sách tất cả các video tìm thấy kèm Thumbnail.
         Mỗi item: {url, title, uploader, platform, duration_str, thumbnail_url}
@@ -44,6 +44,8 @@ class PageVideoScanner:
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
                     }
                 }
+                if dns_servers:
+                    ydl_opts['dns_servers'] = dns_servers
                 if cookie_file:
                     ydl_opts['cookiefile'] = cookie_file
                 elif cookie_browser and cookie_browser not in ["none", "file", ""]:
@@ -195,7 +197,7 @@ class PageVideoScanner:
         return False, [], "Không tìm thấy video nào trên trang web này. Vui lòng kiểm tra lại URL."
 
     @staticmethod
-    def search_videos_by_keyword(keyword: str, max_results: int = 15, platform: str = "YouTube") -> tuple[bool, list, str]:
+    def search_videos_by_keyword(keyword: str, max_results: int = 15, platform: str = "YouTube", dns_servers: list = None) -> tuple[bool, list, str]:
         """
         Tìm kiếm video theo từ khóa (mặc định YouTube hoặc đa nền tảng).
         """
@@ -217,6 +219,8 @@ class PageVideoScanner:
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
                 }
             }
+            if dns_servers:
+                ydl_opts['dns_servers'] = dns_servers
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(search_query, download=False)

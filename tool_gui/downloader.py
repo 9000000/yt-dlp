@@ -47,6 +47,7 @@ class DownloadTask:
         pot_provider_url: str = "",
         playlist_items: str = None,
         direct_url: str = None,
+        dns_servers: list = None,
         on_progress: Callable[[dict], None] = None,
         on_status: Callable[[str], None] = None,
         on_finish: Callable[[bool, str, str], None] = None
@@ -67,6 +68,7 @@ class DownloadTask:
         self.pot_provider_url = pot_provider_url
         self.playlist_items = playlist_items
         self.direct_url = direct_url
+        self.dns_servers = dns_servers or []
 
         self.on_progress = on_progress
         self.on_status = on_status
@@ -262,6 +264,9 @@ class DownloadTask:
 
         if ffmpeg_path:
             base_opts['ffmpeg_location'] = ffmpeg_path
+
+        if self.dns_servers:
+            base_opts['dns_servers'] = self.dns_servers
 
         postprocessors = []
 

@@ -18,10 +18,11 @@ import threading
 class EmbeddedBrowserManager:
     """Quản lý tiến trình Chromium nhúng vào HWND cha của Tkinter Frame."""
 
-    def __init__(self, parent_hwnd: int, initial_url: str = "https://www.youtube.com", app_dir: Path = None):
+    def __init__(self, parent_hwnd: int, initial_url: str = "https://www.youtube.com", app_dir: Path = None, doh_url: str = ""):
         self.parent_hwnd = parent_hwnd
         self.initial_url = initial_url
         self.app_dir = app_dir or Path(__file__).resolve().parent.parent
+        self.doh_url = doh_url
         self.sync_url_file = self.app_dir / ".current_browser_url.txt"
         self.action_file = self.app_dir / ".browser_action.json"
         self.cmd_file = self.app_dir / ".browser_cmd.json"
@@ -37,6 +38,7 @@ class EmbeddedBrowserManager:
 
         # Khởi chạy tiến trình con chạy pywebview nhúng
         sub_code = f"""
+import os
 import webview
 import time
 import threading
@@ -49,6 +51,10 @@ app_dir = Path(r'{self.app_dir}')
 sync_file = app_dir / '.current_browser_url.txt'
 cmd_file = app_dir / '.browser_cmd.json'
 initial_url = r'{self.initial_url}'
+doh_url = r'{self.doh_url}'
+
+if doh_url:
+    os.environ['WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS'] = f'--enable-features=DnsOverHttps --force-doh-template={{doh_url}}'
 
 window = None
 target_hwnd = None

@@ -365,13 +365,15 @@ class DownloadView(ctk.CTkFrame):
             cookie_file = self.config_manager.get("cookie_file_path", "")
             pot_enabled = self.config_manager.get("youtube_pot_enabled", True)
             pot_url = self.config_manager.get("youtube_pot_provider_url", "")
+            dns_servers = self.config_manager.get_dns_servers()
 
             success, meta, msg = URLDetector.fetch_metadata(
                 url,
                 cookie_browser=browser_cookie,
                 cookie_file=cookie_file,
                 pot_enabled=pot_enabled,
-                pot_provider_url=pot_url
+                pot_provider_url=pot_url,
+                dns_servers=dns_servers
             )
 
             if success and meta:
@@ -604,9 +606,10 @@ class DownloadView(ctk.CTkFrame):
         cur = self.get_current_browser_url()
         self.log(f"[Trình duyệt] Bắt đầu quét toàn bộ video trên trang: {cur}")
         self.btn_scan_page.configure(state="disabled", text="⏳ Đang quét...")
+        dns_servers = self.config_manager.get_dns_servers()
 
         def _worker():
-            ok, results, msg = PageVideoScanner.scan_webpage_for_videos(cur)
+            ok, results, msg = PageVideoScanner.scan_webpage_for_videos(cur, dns_servers=dns_servers)
             self.after(0, lambda: self._on_scan_finished(ok, results, msg, cur))
 
         threading.Thread(target=_worker, daemon=True).start()
@@ -669,10 +672,12 @@ class DownloadView(ctk.CTkFrame):
         w = max(self.browser_container.winfo_width(), 900)
         h = max(self.browser_container.winfo_height(), 550)
         
+        doh_url = self.config_manager.get_doh_url()
         self.browser_mgr = EmbeddedBrowserManager(
             parent_hwnd=self.browser_container.winfo_id(),
             initial_url=url,
-            app_dir=self.app_dir
+            app_dir=self.app_dir,
+            doh_url=doh_url
         )
         self.browser_mgr.start(w, h)
 
@@ -755,6 +760,7 @@ class DownloadView(ctk.CTkFrame):
         cookie_file = self.config_manager.get("cookie_file_path", "")
         pot_enabled = self.config_manager.get("youtube_pot_enabled", True)
         pot_url = self.config_manager.get("youtube_pot_provider_url", "")
+        dns_servers = self.config_manager.get_dns_servers()
 
         direct_url = None
         if self.current_meta:
@@ -785,6 +791,7 @@ class DownloadView(ctk.CTkFrame):
             pot_enabled=pot_enabled,
             pot_provider_url=pot_url,
             direct_url=direct_url,
+            dns_servers=dns_servers,
             on_progress=self._on_download_progress,
             on_status=self._on_download_status,
             on_finish=self._on_download_finished
@@ -919,6 +926,7 @@ class DownloadView(ctk.CTkFrame):
         cookie_file = self.config_manager.get("cookie_file_path", "")
         pot_enabled = self.config_manager.get("youtube_pot_enabled", True)
         pot_url = self.config_manager.get("youtube_pot_provider_url", "")
+        dns_servers = self.config_manager.get_dns_servers()
 
         for idx, item in enumerate(self.queue_items):
             if not self.is_batch_running:
@@ -936,7 +944,7 @@ class DownloadView(ctk.CTkFrame):
                 self.batch_total_bar.set(i / total)
             ))
 
-            ok, meta, _ = URLDetector.fetch_metadata(url, cookie_browser=cookie_browser, cookie_file=cookie_file, pot_enabled=pot_enabled, pot_provider_url=pot_url)
+            ok, meta, _ = URLDetector.fetch_metadata(url, cookie_browser=cookie_browser, cookie_file=cookie_file, pot_enabled=pot_enabled, pot_provider_url=pot_url, dns_servers=dns_servers)
             if ok and meta:
                 v_title = meta.get("title", url)
                 v_dur = meta.get("duration_str", "--:--")
@@ -966,6 +974,7 @@ class DownloadView(ctk.CTkFrame):
                 pot_enabled=pot_enabled,
                 pot_provider_url=pot_url,
                 playlist_items=playlist_range,
+                dns_servers=dns_servers,
                 on_finish=on_finish
             )
             task.start()

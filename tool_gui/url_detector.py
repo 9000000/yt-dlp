@@ -142,7 +142,8 @@ class URLDetector:
         cookie_browser: str = "none",
         cookie_file: str = "",
         pot_enabled: bool = True,
-        pot_provider_url: str = ""
+        pot_provider_url: str = "",
+        dns_servers: list = None
     ) -> tuple[bool, dict | None, str]:
         """
         Trích xuất thông tin chi tiết video/playlist từ URL bằng yt-dlp và bộ giải mã phụ trợ.
@@ -164,6 +165,9 @@ class URLDetector:
                     'Sec-Fetch-Mode': 'navigate'
                 }
             }
+
+            if dns_servers:
+                base_opts['dns_servers'] = dns_servers
 
             # Tích hợp YouTube Botguard / PO Token Provider & Multi-client fallback
             if ("youtube.com" in url.lower() or "youtu.be" in url.lower()) and pot_enabled:
