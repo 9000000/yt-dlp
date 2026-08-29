@@ -1,8 +1,7 @@
 """
 Công Cụ Tạo License Key Bản Quyền (ToolDL Key Generator)
-Hỗ trợ cả Giao diện đồ họa (GUI) & Dòng lệnh (CLI) tương tác:
-- Trên Windows Desktop: Tự động mở Giao diện đồ họa đẹp mắt (hoặc chạy qua key_generator.bat).
-- Trên Android (Termux/Pydroid 3) / Linux / Server: Tự động chạy Menu tương tác CLI không bị tắt màn hình.
+Tương thích 100% với Android (Termux, Pydroid 3, QPython), Windows, macOS và Linux.
+Hoạt động hoàn toàn độc lập, không yêu cầu cài thêm bất kỳ thư viện ngoài nào.
 """
 
 import sys
@@ -15,7 +14,7 @@ import base64
 import argparse
 from pathlib import Path
 
-# Đảm bảo UTF-8 cho Windows console
+# Đảm bảo UTF-8 cho console
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding='utf-8')
@@ -57,8 +56,42 @@ class StandaloneLicenseGenerator:
         sig = cls._create_signature(payload_b64)
         return f"{payload_b64}.{sig}"
 
+def copy_to_clipboard_safe(text: str):
+    """Sao chép an toàn vào khay nhớ tạm mà không làm sập ứng dụng trên Android."""
+    # 1. Thử Termux API trên Android
+    if shutil_which("termux-clipboard-set"):
+        try:
+            import subprocess
+            p = subprocess.Popen(["termux-clipboard-set"], stdin=subprocess.PIPE)
+            p.communicate(input=text.encode('utf-8'))
+            print(" 📋 Đã tự động sao chép Key vào Clipboard Android!")
+            return
+        except Exception:
+            pass
+
+    # 2. Thử Tkinter trên Windows / Desktop
+    if sys.platform == "win32":
+        try:
+            import tkinter as tk
+            r = tk.Tk()
+            r.withdraw()
+            r.clipboard_clear()
+            r.clipboard_append(text)
+            r.update()
+            r.destroy()
+            print(" 📋 Đã tự động sao chép Key vào Clipboard!")
+        except Exception:
+            pass
+
+def shutil_which(cmd: str) -> bool:
+    try:
+        import shutil
+        return bool(shutil.which(cmd))
+    except Exception:
+        return False
+
 def interactive_menu():
-    """Vòng lặp menu dòng lệnh (không bao giờ bị tắt đột ngột)."""
+    """Vòng lặp menu dòng lệnh tương tác trên Android và máy tính."""
     while True:
         print("\n" + "=" * 58)
         print("   🔑 TRÌNH TẠO MÃ KÍCH HOẠT BẢN QUYỀN TOOLDL PRO")
@@ -118,18 +151,7 @@ def interactive_menu():
         print(f" ⭐ Bản quyền  : Gói Đầy Đủ (Full Pro)")
         print("=" * 58)
 
-        # Tự động copy vào clipboard nếu hỗ trợ
-        try:
-            import tkinter as tk
-            r = tk.Tk()
-            r.withdraw()
-            r.clipboard_clear()
-            r.clipboard_append(key)
-            r.update()
-            r.destroy()
-            print(" 📋 Đã tự động sao chép Key vào Clipboard!")
-        except Exception:
-            pass
+        copy_to_clipboard_safe(key)
 
         print("\n" + "-" * 58)
         ans = input("👉 Nhấn Enter để tiếp tục tạo key khác (hoặc gõ 'q' để thoát): ").strip().lower()
@@ -138,7 +160,7 @@ def interactive_menu():
             break
 
 def launch_gui():
-    """Giao diện đồ họa trực quan (GUI)."""
+    """Giao diện đồ họa trực quan (GUI) dành cho Windows Desktop."""
     import customtkinter as ctk
     import tkinter.messagebox as msgbox
 
@@ -199,43 +221,52 @@ def launch_gui():
     root.mainloop()
 
 def main():
-    parser = argparse.ArgumentParser(description="ToolDL License Key Generator")
-    parser.add_argument("-m", "--machine", default="", help="Mã Machine ID của máy khách (hoặc 'ALL' cho mọi máy)")
-    parser.add_argument("-d", "--days", type=int, default=0, help="Số ngày sử dụng (0 = Vĩnh viễn / Lifetime)")
-    parser.add_argument("-c", "--count", type=int, default=1, help="Số lượng key cần tạo")
-    parser.add_argument("--cli", action="store_true", help="Chạy chế độ dòng lệnh tương tác CLI")
-
-    args = parser.parse_args()
-
-    # Nếu truyền cờ -m cụ thể -> xuất key trực tiếp
-    if args.machine:
-        print("\n" + "=" * 50)
-        print("      CÔNG CỤ TẠO LICENSE KEY - TOOLDL")
-        print("=" * 50)
-        print(f"Machine ID : {args.machine}")
-        print(f"Thời hạn   : {'Vĩnh viễn (Lifetime)' if args.days == 0 else f'{args.days} ngày'}")
-        print(f"Số lượng   : {args.count}")
-        print("-" * 50)
-
-        for i in range(args.count):
-            key = StandaloneLicenseGenerator.generate_license_key(
-                machine_id=args.machine,
-                days_valid=args.days
-            )
-            print(f"Key [{i+1}]: {key}")
-        print("=" * 50 + "\n")
-        return
-
-    # Nếu truyền cờ --cli hoặc không có giao diện đồ họa -> chạy interactive CLI
-    if args.cli or not sys.stdin.isatty():
-        interactive_menu()
-        return
-
-    # Mặc định trên máy tính: Thử mở GUI, nếu không có CustomTkinter thì mở CLI
     try:
-        launch_gui()
-    except Exception:
+        parser = argparse.ArgumentParser(description="ToolDL License Key Generator")
+        parser.add_argument("-m", "--machine", default="", help="Mã Machine ID của máy khách (hoặc 'ALL' cho mọi máy)")
+        parser.add_argument("-d", "--days", type=int, default=0, help="Số ngày sử dụng (0 = Vĩnh viễn / Lifetime)")
+        parser.add_argument("-c", "--count", type=int, default=1, help="Số lượng key cần tạo")
+        parser.add_argument("--gui", action="store_true", help="Bắt buộc mở giao diện đồ họa Tkinter")
+
+        args = parser.parse_args()
+
+        # 1. Nếu truyền tham số -m -> In key ra ngay
+        if args.machine:
+            print("\n" + "=" * 50)
+            print("      CÔNG CỤ TẠO LICENSE KEY - TOOLDL")
+            print("=" * 50)
+            print(f"Machine ID : {args.machine}")
+            print(f"Thời hạn   : {'Vĩnh viễn (Lifetime)' if args.days == 0 else f'{args.days} ngày'}")
+            print(f"Số lượng   : {args.count}")
+            print("-" * 50)
+
+            for i in range(args.count):
+                key = StandaloneLicenseGenerator.generate_license_key(
+                    machine_id=args.machine,
+                    days_valid=args.days
+                )
+                print(f"Key [{i+1}]: {key}")
+            print("=" * 50 + "\n")
+            return
+
+        # 2. Nếu ở trên Windows và có CustomTkinter (hoặc người dùng chọn --gui) -> Mở GUI
+        if (sys.platform == "win32" or args.gui) and not os.getenv("ANDROID_ROOT"):
+            try:
+                import customtkinter
+                launch_gui()
+                return
+            except Exception:
+                pass
+
+        # 3. Mặc định trên Android / Linux / macOS / Server: Chạy menu tương tác CLI
         interactive_menu()
+
+    except Exception as e:
+        print(f"\n❌ Lỗi: {e}")
+        try:
+            input("\n👉 Nhấn Enter để thoát...")
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     main()
