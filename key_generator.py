@@ -1,7 +1,8 @@
 """
 Công Cụ Tạo License Key Bản Quyền (ToolDL Key Generator)
-Chạy mượt mà trên MỌI NỀN TẢNG: Windows, macOS, Linux VÀ ANDROID (Termux, Pydroid 3, QPython).
-Tự động hoạt động độc lập (Standalone) mà không yêu cầu cài thêm bất kỳ thư viện ngoài nào.
+Hỗ trợ cả Giao diện đồ họa (GUI) & Dòng lệnh (CLI) tương tác:
+- Trên Windows Desktop: Tự động mở Giao diện đồ họa đẹp mắt (hoặc chạy qua key_generator.bat).
+- Trên Android (Termux/Pydroid 3) / Linux / Server: Tự động chạy Menu tương tác CLI không bị tắt màn hình.
 """
 
 import sys
@@ -13,6 +14,14 @@ import hashlib
 import base64
 import argparse
 from pathlib import Path
+
+# Đảm bảo UTF-8 cho Windows console
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 # Khóa bí mật nội bộ đồng bộ với license_manager.py
 SECRET_SALT = b"ToolDL_Pro_2026_Secure_License_Master_Key_Secret!#@987"
@@ -49,110 +58,87 @@ class StandaloneLicenseGenerator:
         return f"{payload_b64}.{sig}"
 
 def interactive_menu():
-    print("\n" + "=" * 55)
-    print("   🔑 TRÌNH TẠO MÃ KÍCH HOẠT TOOLDL PRO")
-    print("   📱 Chạy trực tiếp trên Android, Windows, Linux, Mac")
-    print("=" * 55)
-    
-    # 1. Machine ID
-    print("\n1. Đối tượng áp dụng:")
-    print("   [1] Dùng cho mọi máy tính (Universal Key)")
-    print("   [2] Khóa theo Machine ID của khách (Locked Key)")
-    choice_m = input("   👉 Lựa chọn [1/2] (mặc định 1): ").strip()
-    
-    if choice_m == "2":
-        machine_id = input("   👉 Nhập Machine ID của khách (VD: TDL-A1B2-C3D4-E5F6): ").strip()
-        if not machine_id:
-            print("   ⚠️ Không nhập Machine ID, chuyển sang chế độ ALL.")
+    """Vòng lặp menu dòng lệnh (không bao giờ bị tắt đột ngột)."""
+    while True:
+        print("\n" + "=" * 58)
+        print("   🔑 TRÌNH TẠO MÃ KÍCH HOẠT BẢN QUYỀN TOOLDL PRO")
+        print("   📱 Hỗ trợ: Android, Windows, macOS, Linux")
+        print("=" * 58)
+        
+        # 1. Machine ID
+        print("\n1. Đối tượng áp dụng:")
+        print("   [1] Dùng cho mọi máy tính (Universal Key)")
+        print("   [2] Khóa theo Machine ID của khách (Locked Key)")
+        print("   [0] Thoát")
+        choice_m = input("   👉 Lựa chọn [1/2/0] (mặc định 1): ").strip()
+        
+        if choice_m == "0":
+            print("👋 Tạm biệt!")
+            break
+
+        if choice_m == "2":
+            machine_id = input("   👉 Nhập Machine ID của khách (VD: TDL-A1B2-C3D4-E5F6): ").strip()
+            if not machine_id:
+                print("   ⚠️ Không nhập Machine ID, chuyển sang chế độ ALL.")
+                machine_id = "ALL"
+        else:
             machine_id = "ALL"
-    else:
-        machine_id = "ALL"
 
-    # 2. Thời hạn
-    print("\n2. Thời hạn sử dụng:")
-    print("   [1] Vĩnh viễn (Lifetime)")
-    print("   [2] 7 ngày (Dùng thử)")
-    print("   [3] 30 ngày (1 tháng)")
-    print("   [4] 90 ngày (3 tháng)")
-    print("   [5] 365 ngày (1 năm)")
-    print("   [6] Tùy chỉnh số ngày")
-    choice_d = input("   👉 Lựa chọn [1-6] (mặc định 1): ").strip()
+        # 2. Thời hạn
+        print("\n2. Thời hạn sử dụng:")
+        print("   [1] Vĩnh viễn (Lifetime)")
+        print("   [2] 7 ngày (Dùng thử)")
+        print("   [3] 30 ngày (1 tháng)")
+        print("   [4] 90 ngày (3 tháng)")
+        print("   [5] 365 ngày (1 năm)")
+        print("   [6] Tùy chỉnh số ngày")
+        choice_d = input("   👉 Lựa chọn [1-6] (mặc định 1): ").strip()
 
-    days_map = {"1": 0, "2": 7, "3": 30, "4": 90, "5": 365}
-    if choice_d in days_map:
-        days = days_map[choice_d]
-    elif choice_d == "6":
+        days_map = {"1": 0, "2": 7, "3": 30, "4": 90, "5": 365}
+        if choice_d in days_map:
+            days = days_map[choice_d]
+        elif choice_d == "6":
+            try:
+                days = int(input("   👉 Nhập số ngày hợp lệ: ").strip())
+            except ValueError:
+                days = 30
+        else:
+            days = 0
+
+        # Tạo Key
+        key = StandaloneLicenseGenerator.generate_license_key(machine_id, days)
+        
+        print("\n" + "=" * 58)
+        print(" ✅ ĐÃ TẠO KEY THÀNH CÔNG:")
+        print("-" * 58)
+        print(f" 🔑 KEY        : {key}")
+        print("-" * 58)
+        print(f" 📌 Áp dụng    : {machine_id}")
+        print(f" ⏳ Hạn sử dụng: {'Vĩnh viễn (Lifetime)' if days == 0 else f'{days} ngày'}")
+        print(f" ⭐ Bản quyền  : Gói Đầy Đủ (Full Pro)")
+        print("=" * 58)
+
+        # Tự động copy vào clipboard nếu hỗ trợ
         try:
-            days = int(input("   👉 Nhập số ngày hợp lệ: ").strip())
-        except ValueError:
-            days = 30
-    else:
-        days = 0
+            import tkinter as tk
+            r = tk.Tk()
+            r.withdraw()
+            r.clipboard_clear()
+            r.clipboard_append(key)
+            r.update()
+            r.destroy()
+            print(" 📋 Đã tự động sao chép Key vào Clipboard!")
+        except Exception:
+            pass
 
-    # Tạo Key
-    key = StandaloneLicenseGenerator.generate_license_key(machine_id, days)
-    
-    print("\n" + "=" * 55)
-    print(" ✅ ĐÃ TẠO KEY THÀNH CÔNG:")
-    print("-" * 55)
-    print(f" 🔑 KEY: {key}")
-    print("-" * 55)
-    print(f" 📌 Áp dụng     : {machine_id}")
-    print(f" ⏳ Hạn sử dụng : {'Vĩnh viễn (Lifetime)' if days == 0 else f'{days} ngày'}")
-    print(f" ⭐ Bản quyền   : Gói Đầy Đủ (Full Pro)")
-    print("=" * 55 + "\n")
-
-    # Tự động copy vào clipboard nếu hỗ trợ
-    try:
-        import tkinter as tk
-        r = tk.Tk()
-        r.withdraw()
-        r.clipboard_clear()
-        r.clipboard_append(key)
-        r.update()
-        r.destroy()
-        print("📋 Đã tự động copy Key vào Clipboard!")
-    except Exception:
-        pass
-
-def cli_generator():
-    parser = argparse.ArgumentParser(description="ToolDL Standalone License Key Generator")
-    parser.add_argument("-m", "--machine", default="ALL", help="Mã Machine ID của máy khách (hoặc 'ALL' cho mọi máy)")
-    parser.add_argument("-d", "--days", type=int, default=0, help="Số ngày sử dụng (0 = Vĩnh viễn / Lifetime)")
-    parser.add_argument("-c", "--count", type=int, default=1, help="Số lượng key cần tạo")
-    parser.add_argument("--gui", action="store_true", help="Mở giao diện đồ họa tạo Key (nếu có hỗ trợ Tkinter)")
-
-    args = parser.parse_args()
-
-    if args.gui:
-        try:
-            launch_gui()
-            return
-        except Exception as e:
-            print(f"⚠️ Môi trường không hỗ trợ GUI Tkinter ({e}). Chuyển sang Menu tương tác CLI.")
-
-    # Nếu không truyền tham số nào, mở menu tương tác
-    if len(sys.argv) == 1:
-        interactive_menu()
-        return
-
-    print("\n" + "=" * 50)
-    print("      CÔNG CỤ TẠO LICENSE KEY - TOOLDL")
-    print("=" * 50)
-    print(f"Machine ID : {args.machine}")
-    print(f"Thời hạn   : {'Vĩnh viễn (Lifetime)' if args.days == 0 else f'{args.days} ngày'}")
-    print(f"Số lượng   : {args.count}")
-    print("-" * 50)
-
-    for i in range(args.count):
-        key = StandaloneLicenseGenerator.generate_license_key(
-            machine_id=args.machine,
-            days_valid=args.days
-        )
-        print(f"Key [{i+1}]: {key}")
-    print("=" * 50 + "\n")
+        print("\n" + "-" * 58)
+        ans = input("👉 Nhấn Enter để tiếp tục tạo key khác (hoặc gõ 'q' để thoát): ").strip().lower()
+        if ans == 'q':
+            print("👋 Tạm biệt!")
+            break
 
 def launch_gui():
+    """Giao diện đồ họa trực quan (GUI)."""
     import customtkinter as ctk
     import tkinter.messagebox as msgbox
 
@@ -160,32 +146,32 @@ def launch_gui():
     ctk.set_default_color_theme("blue")
 
     root = ctk.CTk()
-    root.title("ToolDL - Key Generator")
-    root.geometry("520x400")
+    root.title("ToolDL Pro - Key Generator")
+    root.geometry("540x440")
     root.resizable(False, False)
 
-    title_lbl = ctk.CTkLabel(root, text="🔑 ToolDL Key Generator", font=("Segoe UI", 20, "bold"))
+    title_lbl = ctk.CTkLabel(root, text="🔑 ToolDL Pro Key Generator", font=("Segoe UI", 20, "bold"), text_color=("#3B82F6", "#60A5FA"))
     title_lbl.pack(pady=(20, 10))
 
-    frame = ctk.CTkFrame(root)
+    frame = ctk.CTkFrame(root, corner_radius=10)
     frame.pack(padx=20, pady=10, fill="both", expand=True)
 
     # Machine ID
-    m_lbl = ctk.CTkLabel(frame, text="Mã Machine ID (nhập 'ALL' cho mọi máy):", font=("Segoe UI", 12))
+    m_lbl = ctk.CTkLabel(frame, text="Mã Machine ID (nhập 'ALL' cho mọi máy):", font=("Segoe UI", 12, "bold"))
     m_lbl.pack(anchor="w", padx=20, pady=(15, 2))
-    m_entry = ctk.CTkEntry(frame, placeholder_text="ALL hoặc TDL-XXXX-XXXX-XXXX")
+    m_entry = ctk.CTkEntry(frame, placeholder_text="ALL hoặc TDL-XXXX-XXXX-XXXX", font=("Consolas", 12), height=34)
     m_entry.insert(0, "ALL")
     m_entry.pack(fill="x", padx=20, pady=(0, 12))
 
     # Duration
-    d_lbl = ctk.CTkLabel(frame, text="Thời hạn bản quyền:", font=("Segoe UI", 12))
+    d_lbl = ctk.CTkLabel(frame, text="Thời hạn bản quyền:", font=("Segoe UI", 12, "bold"))
     d_lbl.pack(anchor="w", padx=20, pady=(5, 2))
-    d_combo = ctk.CTkComboBox(frame, values=["Vĩnh viễn (Lifetime)", "7 ngày (Trial)", "30 ngày (1 tháng)", "90 ngày (3 tháng)", "365 ngày (1 năm)"])
+    d_combo = ctk.CTkComboBox(frame, values=["Vĩnh viễn (Lifetime)", "7 ngày (Trial)", "30 ngày (1 tháng)", "90 ngày (3 tháng)", "365 ngày (1 năm)"], font=("Segoe UI", 12), height=34)
     d_combo.set("Vĩnh viễn (Lifetime)")
     d_combo.pack(fill="x", padx=20, pady=(0, 15))
 
     # Result Key Entry
-    res_entry = ctk.CTkEntry(frame, placeholder_text="Key sẽ xuất hiện ở đây...", font=("Segoe UI", 11, "bold"))
+    res_entry = ctk.CTkEntry(frame, placeholder_text="Key sẽ xuất hiện ở đây sau khi bấm tạo...", font=("Consolas", 12, "bold"), height=36)
     res_entry.pack(fill="x", padx=20, pady=(5, 12))
 
     def on_generate():
@@ -205,12 +191,51 @@ def launch_gui():
         res_entry.insert(0, key)
         root.clipboard_clear()
         root.clipboard_append(key)
-        msgbox.showinfo("Thành công", f"Đã tạo Key và copy vào Clipboard:\n\n{key}")
+        msgbox.showinfo("Thành công", f"Đã tạo Key và tự động sao chép vào Clipboard:\n\n{key}")
 
-    gen_btn = ctk.CTkButton(frame, text="✨ TẠO LICENSE KEY", command=on_generate, height=38, font=("Segoe UI", 13, "bold"), fg_color="#2563EB", hover_color="#1D4ED8")
-    gen_btn.pack(pady=(5, 10))
+    gen_btn = ctk.CTkButton(frame, text="✨ TẠO LICENSE KEY NGAY", command=on_generate, height=42, font=("Segoe UI", 13, "bold"), fg_color="#059669", hover_color="#047857", corner_radius=8)
+    gen_btn.pack(fill="x", padx=20, pady=(5, 10))
 
     root.mainloop()
 
+def main():
+    parser = argparse.ArgumentParser(description="ToolDL License Key Generator")
+    parser.add_argument("-m", "--machine", default="", help="Mã Machine ID của máy khách (hoặc 'ALL' cho mọi máy)")
+    parser.add_argument("-d", "--days", type=int, default=0, help="Số ngày sử dụng (0 = Vĩnh viễn / Lifetime)")
+    parser.add_argument("-c", "--count", type=int, default=1, help="Số lượng key cần tạo")
+    parser.add_argument("--cli", action="store_true", help="Chạy chế độ dòng lệnh tương tác CLI")
+
+    args = parser.parse_args()
+
+    # Nếu truyền cờ -m cụ thể -> xuất key trực tiếp
+    if args.machine:
+        print("\n" + "=" * 50)
+        print("      CÔNG CỤ TẠO LICENSE KEY - TOOLDL")
+        print("=" * 50)
+        print(f"Machine ID : {args.machine}")
+        print(f"Thời hạn   : {'Vĩnh viễn (Lifetime)' if args.days == 0 else f'{args.days} ngày'}")
+        print(f"Số lượng   : {args.count}")
+        print("-" * 50)
+
+        for i in range(args.count):
+            key = StandaloneLicenseGenerator.generate_license_key(
+                machine_id=args.machine,
+                days_valid=args.days
+            )
+            print(f"Key [{i+1}]: {key}")
+        print("=" * 50 + "\n")
+        return
+
+    # Nếu truyền cờ --cli hoặc không có giao diện đồ họa -> chạy interactive CLI
+    if args.cli or not sys.stdin.isatty():
+        interactive_menu()
+        return
+
+    # Mặc định trên máy tính: Thử mở GUI, nếu không có CustomTkinter thì mở CLI
+    try:
+        launch_gui()
+    except Exception:
+        interactive_menu()
+
 if __name__ == "__main__":
-    cli_generator()
+    main()
