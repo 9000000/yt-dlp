@@ -271,7 +271,18 @@ class DownloadView(ctk.CTkFrame):
         opt_inner = ctk.CTkFrame(opt_card, fg_color="transparent")
         opt_inner.pack(fill="both", expand=True, padx=10, pady=6)
 
-        ctk.CTkLabel(opt_inner, text="⚙️ Cài đặt định dạng & chất lượng", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(0, 4))
+        # Cài đặt sẵn (Preset)
+        p_row = ctk.CTkFrame(opt_inner, fg_color="transparent")
+        p_row.pack(fill="x", pady=(0, 4))
+        ctk.CTkLabel(p_row, text="⚡ Cài đặt sẵn:", font=("Segoe UI", 10, "bold"), text_color=("#2563EB", "#60A5FA")).pack(side="left")
+        self.preset_combo = ctk.CTkComboBox(
+            p_row,
+            values=[p.get("name", "Preset") for p in self.config_manager.get_presets()],
+            command=self.on_preset_selected,
+            height=26,
+            font=("Segoe UI", 9)
+        )
+        self.preset_combo.pack(side="right", fill="x", expand=True, padx=(4, 0))
 
         self.mode_var = ctk.StringVar(value="video")
         self.mode_seg = ctk.CTkSegmentedButton(opt_inner, values=["🎬 Video + Tiếng", "🎵 Chỉ lấy Âm thanh"], command=self.on_mode_changed, height=26)
@@ -447,9 +458,19 @@ class DownloadView(ctk.CTkFrame):
 
         row_b_opt = ctk.CTkFrame(right_ctrl, fg_color="transparent")
         row_b_opt.pack(fill="x", pady=(0, 4))
-        self.batch_fmt_combo = ctk.CTkComboBox(row_b_opt, values=["🌟 Video MP4 (Gốc)", "🎬 Video 1080p", "📱 Video 720p", "🎵 Âm thanh MP3 320k", "🎵 Âm thanh M4A"], height=26, font=("Segoe UI", 10))
+        ctk.CTkLabel(row_b_opt, text="⚡ Preset:", font=("Segoe UI", 9, "bold"), text_color=("#2563EB", "#60A5FA")).pack(side="left", padx=(0, 4))
+        self.batch_preset_combo = ctk.CTkComboBox(
+            row_b_opt,
+            values=[p.get("name", "Preset") for p in self.config_manager.get_presets()],
+            command=self.on_batch_preset_selected,
+            height=26,
+            font=("Segoe UI", 9)
+        )
+        self.batch_preset_combo.pack(side="left", fill="x", expand=True, padx=(0, 4))
+
+        self.batch_fmt_combo = ctk.CTkComboBox(row_b_opt, values=["🌟 Video MP4 (Gốc)", "🎬 Video 1080p", "📱 Video 720p", "🎵 Âm thanh MP3 320k", "🎵 Âm thanh M4A"], height=26, font=("Segoe UI", 10), width=120)
         self.batch_fmt_combo.set("🌟 Video MP4 (Gốc)")
-        self.batch_fmt_combo.pack(side="left", fill="x", expand=True, padx=(0, 4))
+        self.batch_fmt_combo.pack(side="right")
 
         self.batch_range_entry = ctk.CTkEntry(right_ctrl, placeholder_text="Phạm vi playlist (VD: 1-10 hoặc để trống)", height=26, font=("Segoe UI", 9))
         self.batch_range_entry.pack(fill="x", pady=(0, 4))
@@ -723,6 +744,69 @@ class DownloadView(ctk.CTkFrame):
             self.fmt_combo.configure(state="normal")
             self.audio_combo.configure(state="disabled")
             self.sub_check.configure(state="normal")
+
+    def refresh_presets_in_view(self):
+        """Làm mới danh sách Preset trong giao diện Tải Video."""
+        presets = self.config_manager.get_presets()
+        names = [p.get("name", "Preset") for p in presets]
+        if hasattr(self, 'preset_combo'):
+            self.preset_combo.configure(values=names)
+        if hasattr(self, 'batch_preset_combo'):
+            self.batch_preset_combo.configure(values=names)
+
+    def on_preset_selected(self, choice):
+        p = self.config_manager.get_preset_by_name(choice)
+        if p:
+            self.apply_preset(p)
+
+    def on_batch_preset_selected(self, choice):
+        p = self.config_manager.get_preset_by_name(choice)
+        if not p:
+            return
+        m = p.get("mode", "video")
+        q = p.get("quality", "🌟 Video MP4 (Gốc)")
+        if m == "audio":
+            self.batch_fmt_combo.set("🎵 Âm thanh MP3 320k")
+        elif "1080" in q:
+            self.batch_fmt_combo.set("🎬 Video 1080p")
+        elif "720" in q:
+            self.batch_fmt_combo.set("📱 Video 720p")
+        else:
+            self.batch_fmt_combo.set("🌟 Video MP4 (Gốc)")
+        self.log(f"[Preset hàng loạt] Đã chọn: {p.get('name')}")
+
+    def apply_preset(self, p: dict):
+        mode = p.get("mode", "video")
+        if mode == "audio":
+            self.mode_seg.set("🎵 Chỉ lấy Âm thanh")
+            self.on_mode_changed("🎵 Chỉ lấy Âm thanh")
+        else:
+            self.mode_seg.set("🎬 Video + Tiếng")
+            self.on_mode_changed("🎬 Video + Tiếng")
+
+        if p.get("quality"):
+            self.quality_combo.set(p["quality"])
+        if p.get("format"):
+            self.fmt_combo.set(p["format"])
+        if p.get("audio_codec"):
+            self.audio_combo.set(p["audio_codec"])
+
+        if p.get("embed_thumbnail", True):
+            self.thumb_check.select()
+        else:
+            self.thumb_check.deselect()
+
+        if p.get("add_metadata", True):
+            self.meta_check.select()
+        else:
+            self.meta_check.deselect()
+
+        if p.get("embed_subtitles", True):
+            self.sub_check.select()
+        else:
+            self.sub_check.deselect()
+
+        self.log(f"[Preset] Đã nạp cấu hình mẫu: {p.get('name')}")
 
     def on_browse_dir(self):
         folder = filedialog.askdirectory(initialdir=self.dir_entry.get())

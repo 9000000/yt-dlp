@@ -84,12 +84,11 @@ class ToolDLApp(ctk.CTk):
         )
         sub_logo.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="w")
 
-        # Các nút điều hướng tinh gọn (4 Mục Chính Hợp Nhất)
+        # Các nút điều hướng tinh gọn (3 Mục Chính Hợp Nhất)
         nav_items = [
             ("download", "📥 Tải & Duyệt Video", self.show_download_view),
-            ("tools", "🔧 Quản Lý Phụ Trợ", self.show_tools_view),
-            ("settings", "⚙ Cài Đặt", self.show_settings_view),
-            ("logs", "📜 Nhật Ký", self.show_log_view),
+            ("settings", "⚙️ Cài Đặt & Phụ Trợ", self.show_settings_view),
+            ("logs", "📜 Nhật Ký Hoạt Động", self.show_log_view),
         ]
 
         for i, (key, title, cmd) in enumerate(nav_items):
@@ -126,12 +125,12 @@ class ToolDLApp(ctk.CTk):
         # Khởi tạo sẵn các Views
         self.log_view = LogView(self.container)
         self.download_view = DownloadView(self.container, self.config_manager, log_callback=self.log_view.append_log)
-        self.tools_view = ToolsView(self.container, self.config_manager, log_callback=self.log_view.append_log)
         self.settings_view = SettingsView(
             self.container,
             self.config_manager,
             self.license_manager,
-            on_reauth_callback=self.show_activation_screen
+            on_reauth_callback=self.show_activation_screen,
+            log_callback=self.log_view.append_log
         )
 
         self.activation_view = ActivationView(
@@ -159,7 +158,7 @@ class ToolDLApp(ctk.CTk):
         """Callback khi người dùng kích hoạt key thành công."""
         self.sidebar.grid()
         self.lic_badge.configure(text="🟢 Bản quyền: Đã kích hoạt", text_color="#10B981")
-        self.settings_view.load_settings()
+        self.settings_view.load_all_settings()
         self.show_download_view()
 
     def _hide_all_views(self):
@@ -167,7 +166,6 @@ class ToolDLApp(ctk.CTk):
         for v in [
             self.activation_view,
             self.download_view,
-            self.tools_view,
             self.settings_view,
             self.log_view
         ]:
@@ -187,15 +185,13 @@ class ToolDLApp(ctk.CTk):
         self.download_view.grid(row=0, column=0, sticky="nsew")
 
     def show_tools_view(self):
-        self._hide_all_views()
-        self._set_active_nav("tools")
-        self.tools_view.refresh_status()
-        self.tools_view.grid(row=0, column=0, sticky="nsew")
+        self.show_settings_view()
+        self.settings_view.tabview.set("🛠️ Phụ Trợ & Cập Nhật")
 
     def show_settings_view(self):
         self._hide_all_views()
         self._set_active_nav("settings")
-        self.settings_view.load_settings()
+        self.settings_view.load_all_settings()
         self.settings_view.grid(row=0, column=0, sticky="nsew")
 
     def show_log_view(self):

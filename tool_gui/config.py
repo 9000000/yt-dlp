@@ -1,6 +1,6 @@
 """
 Module Quản lý Cấu hình Ứng dụng (Config Manager).
-Lưu trữ và đồng bộ cài đặt người dùng vào config.json, bao gồm cấu hình DNS vượt chặn trang web.
+Lưu trữ và đồng bộ cài đặt người dùng vào config.json, bao gồm cấu hình DNS và danh sách Cài Đặt Sẵn (Presets).
 """
 
 import os
@@ -41,8 +41,66 @@ DNS_PRESETS = {
     }
 }
 
+DEFAULT_DOWNLOAD_PRESETS = [
+    {
+        "id": "best_video",
+        "name": "🌟 Video MP4 (Chất lượng gốc cao nhất)",
+        "mode": "video",
+        "quality": "🌟 Tốt nhất có thể (Gốc)",
+        "format": "MP4 (Khuyên dùng)",
+        "audio_codec": "MP3 - 320 kbps (Cực cao)",
+        "embed_thumbnail": True,
+        "add_metadata": True,
+        "embed_subtitles": True
+    },
+    {
+        "id": "music_mp3_320",
+        "name": "🎵 Nhạc MP3 320kbps (Studio Master)",
+        "mode": "audio",
+        "quality": "🌟 Tốt nhất có thể (Gốc)",
+        "format": "MP3",
+        "audio_codec": "MP3 - 320 kbps (Cực cao)",
+        "embed_thumbnail": True,
+        "add_metadata": True,
+        "embed_subtitles": False
+    },
+    {
+        "id": "video_4k_uhd",
+        "name": "🎬 Video 4K Ultra HD (2160p)",
+        "mode": "video",
+        "quality": "🎬 4K Ultra HD (2160p)",
+        "format": "MP4 (Khuyên dùng)",
+        "audio_codec": "MP3 - 320 kbps (Cực cao)",
+        "embed_thumbnail": True,
+        "add_metadata": True,
+        "embed_subtitles": True
+    },
+    {
+        "id": "video_1080p_fhd",
+        "name": "📺 Full HD 1080p (Tiêu chuẩn)",
+        "mode": "video",
+        "quality": "📺 Full HD 1080p",
+        "format": "MP4 (Khuyên dùng)",
+        "audio_codec": "MP3 - 320 kbps (Cực cao)",
+        "embed_thumbnail": True,
+        "add_metadata": True,
+        "embed_subtitles": True
+    },
+    {
+        "id": "video_720p_lite",
+        "name": "📱 HD 720p (Tiết kiệm dung lượng)",
+        "mode": "video",
+        "quality": "📱 HD 720p",
+        "format": "MP4 (Khuyên dùng)",
+        "audio_codec": "MP3 - 192 kbps",
+        "embed_thumbnail": True,
+        "add_metadata": False,
+        "embed_subtitles": False
+    }
+]
+
 class ConfigManager:
-    """Quản lý cài đặt cấu hình người dùng."""
+    """Quản lý cài đặt cấu hình người dùng và Presets."""
 
     def __init__(self, app_dir=None):
         if app_dir:
@@ -76,6 +134,8 @@ class ConfigManager:
             "dns_provider": "cloudflare",  # cloudflare, google, quad9, adguard, custom, default
             "custom_dns_servers": "1.1.1.1,1.0.0.1",
             "custom_doh_url": "https://cloudflare-dns.com/dns-query",
+            "download_presets": DEFAULT_DOWNLOAD_PRESETS,
+            "active_preset": "🌟 Video MP4 (Chất lượng gốc cao nhất)",
             "max_concurrent_downloads": 3
         }
 
@@ -136,3 +196,47 @@ class ConfigManager:
         if preset:
             return preset.get("doh", "")
         return ""
+
+    # =========================================================================
+    # QUẢN LÝ CÀI ĐẶT SẴN (DOWNLOAD PRESETS)
+    # =========================================================================
+    def get_presets(self) -> list:
+        """Lấy danh sách các cài đặt mẫu sẵn có."""
+        presets = self.get("download_presets", [])
+        if not presets:
+            presets = list(DEFAULT_DOWNLOAD_PRESETS)
+            self.set("download_presets", presets)
+        return presets
+
+    def get_preset_by_name(self, name: str) -> dict | None:
+        """Tìm preset theo tên hiển thị."""
+        for p in self.get_presets():
+            if p.get("name") == name:
+                return p
+        return None
+
+    def add_or_update_preset(self, preset_dict: dict) -> bool:
+        """Thêm mới hoặc cập nhật một cài đặt sẵn."""
+        presets = self.get_presets()
+        name = preset_dict.get("name", "").strip()
+        if not name:
+            return False
+
+        updated = False
+        for idx, p in enumerate(presets):
+            if p.get("name") == name:
+                presets[idx] = preset_dict
+                updated = True
+                break
+
+        if not updated:
+            presets.append(preset_dict)
+
+        self.set("download_presets", presets)
+        return True
+
+    def delete_preset(self, name: str) -> bool:
+        """Xóa một cài đặt sẵn theo tên."""
+        presets = [p for p in self.get_presets() if p.get("name") != name]
+        self.set("download_presets", presets)
+        return True
