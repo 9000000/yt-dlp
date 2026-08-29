@@ -1,9 +1,10 @@
 """
 Module Tự động Nhận diện & Trích xuất Metadata Liên kết (URL Detector & Extractor).
 Hỗ trợ TikTok (kèm fallback TikWM), Facebook, YouTube, Bilibili, Instagram, và hơn 1000 nền tảng.
-Tự động xử lý thông minh khi Cookie trình duyệt bị khóa hoặc lỗi.
+Tự động hỗ trợ Cookie trình duyệt và Tệp cookies.txt trực tiếp.
 """
 
+import os
 import re
 import io
 import time
@@ -129,10 +130,10 @@ class URLDetector:
         return False, None, "Không thể lấy dữ liệu TikTok."
 
     @classmethod
-    def fetch_metadata(cls, url: str, cookie_browser: str = "none") -> tuple[bool, dict | None, str]:
+    def fetch_metadata(cls, url: str, cookie_browser: str = "none", cookie_file: str = "") -> tuple[bool, dict | None, str]:
         """
         Trích xuất thông tin chi tiết video/playlist từ URL bằng yt-dlp và bộ giải mã phụ trợ.
-        Tự động fallback an toàn nếu cookie trình duyệt bị khóa bởi Chrome/Edge.
+        Tự động hỗ trợ cookie file (.txt) hoặc cookie trình duyệt với cơ chế an toàn.
         """
         plat = cls.detect_platform(url)
 
@@ -153,8 +154,18 @@ class URLDetector:
             info = None
             last_err = ""
 
-            # Lượt 1: Thử với cookie trình duyệt nếu người dùng chọn
-            if cookie_browser and cookie_browser != "none":
+            # 1. Thử với tệp Cookie (.txt) nếu có
+            if cookie_file and os.path.exists(cookie_file):
+                ydl_opts_file = dict(base_opts)
+                ydl_opts_file['cookiefile'] = cookie_file
+                try:
+                    with yt_dlp.YoutubeDL(ydl_opts_file) as ydl:
+                        info = ydl.extract_info(url, download=False)
+                except Exception as e:
+                    last_err = str(e)
+
+            # 2. Thử với Cookie trình duyệt nếu được chọn
+            if not info and cookie_browser and cookie_browser not in ["none", "file", ""]:
                 ydl_opts_cookie = dict(base_opts)
                 ydl_opts_cookie['cookiesfrombrowser'] = (cookie_browser,)
                 try:
@@ -163,7 +174,7 @@ class URLDetector:
                 except Exception as e:
                     last_err = str(e)
 
-            # Lượt 2: Nếu chưa có kết quả (hoặc do cookie bị khóa), thử chế độ chuẩn không cookie
+            # 3. Thử chế độ chuẩn không cookie
             if not info:
                 try:
                     with yt_dlp.YoutubeDL(base_opts) as ydl:
@@ -178,7 +189,6 @@ class URLDetector:
                 duration_sec = info.get('duration')
                 thumbnail_url = info.get('thumbnail')
 
-                # Xây dựng danh sách chất lượng
                 qualities_list = [
                     "🌟 Tốt nhất có thể (Chất lượng gốc cao nhất)",
                     "🎬 8K Ultra HD (4320p)",
@@ -210,14 +220,14 @@ class URLDetector:
                 }
                 return True, result, "Lấy thông tin thành công!"
 
-        # Fallback cho TikTok nếu yt-dlp gặp vấn đề
+        # Fallback cho TikTok
         if plat == "TikTok":
             ok, res, msg = cls._extract_tiktok_fallback(url)
             if ok:
                 return True, res, msg
 
         if plat == "Facebook":
-            return False, None, "Không thể lấy thông tin video Facebook.\n👉 Hãy vào tab 'Cài Đặt' -> chọn 'Trình duyệt lấy Cookie' (Chrome, Edge, Firefox) rồi thử lại."
+            return False, None, "Video Facebook này yêu cầu phiên đăng nhập (Cookie).\n👉 Hãy chọn 'Tệp Cookie (.txt)' hoặc đóng trình duyệt Chrome/Edge rồi chọn lại để xác thực."
 
         return False, None, "Không thể lấy thông tin từ liên kết này. Vui lòng kiểm tra lại đường dẫn."
 

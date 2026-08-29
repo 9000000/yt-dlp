@@ -1,8 +1,7 @@
 """
 Lõi Xử lý & Tải Video Đa luồng Bất đồng bộ (Downloader Engine).
 Hỗ trợ đầy đủ các mức chất lượng (8K/4K/2K/1080p60/720p), bitrate âm thanh,
-gắn thẻ metadata, nhúng thumbnail, phụ đề và tăng tốc đa luồng 100% Tiếng Việt.
-Tự động fallback an toàn nếu Cookie trình duyệt bị khóa bởi Chrome/Edge.
+gắn thẻ metadata, nhúng thumbnail, phụ đề, tăng tốc đa luồng và tệp Cookie (.txt).
 """
 
 import os
@@ -36,6 +35,7 @@ class DownloadTask:
         embed_thumbnail: bool = True,
         add_metadata: bool = True,
         cookie_browser: str = "none",
+        cookie_file: str = "",
         playlist_items: str = None,
         direct_url: str = None,
         on_progress: Callable[[dict], None] = None,
@@ -53,6 +53,7 @@ class DownloadTask:
         self.embed_thumbnail = embed_thumbnail
         self.add_metadata = add_metadata
         self.cookie_browser = cookie_browser
+        self.cookie_file = cookie_file
         self.playlist_items = playlist_items
         self.direct_url = direct_url
 
@@ -288,19 +289,22 @@ class DownloadTask:
             base_opts['playlist_items'] = self.playlist_items
 
         ydl_opts = dict(base_opts)
-        if self.cookie_browser and self.cookie_browser != "none":
+
+        # 1. Tùy chọn file cookie
+        if self.cookie_file and os.path.exists(self.cookie_file):
+            ydl_opts['cookiefile'] = self.cookie_file
+        # 2. Tùy chọn cookie trình duyệt
+        elif self.cookie_browser and self.cookie_browser not in ["none", "file", ""]:
             ydl_opts['cookiesfrombrowser'] = (self.cookie_browser,)
 
         try:
             if self.on_status:
                 self.on_status("Đang kết nối máy chủ video...")
 
-            # Thực thi tải
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(self.url, download=True)
             except Exception as e:
-                # Nếu lỗi do cookie browser bị khóa/không copy được -> Tự động thử lại không cookie
                 err_text = str(e).lower()
                 if "cookie" in err_text and ("copy" in err_text or "lock" in err_text or "find" in err_text) and 'cookiesfrombrowser' in ydl_opts:
                     if self.on_status:
@@ -320,7 +324,7 @@ class DownloadTask:
                     self.on_finish(False, "⏹️ Đã dừng quá trình tải.", "")
             else:
                 if "cannot parse data" in err_msg.lower() or "login" in err_msg.lower():
-                    err_msg = "Video này yêu cầu phiên đăng nhập.\n👉 Hãy vào 'Cài Đặt' -> chọn 'Trình duyệt lấy Cookie' (Chrome, Edge, Firefox) rồi thử lại."
+                    err_msg = "Video Facebook này yêu cầu phiên đăng nhập (Cookie).\n👉 Hãy chọn 'Tệp Cookie (.txt)' hoặc đóng trình duyệt Chrome/Edge rồi chọn lại để xác thực."
 
                 if self.on_finish:
                     self.on_finish(False, f"❌ {err_msg}", "")

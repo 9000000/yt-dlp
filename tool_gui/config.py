@@ -30,12 +30,13 @@ class ConfigManager:
             "theme": "dark",  # dark, light, system
             "auto_detect_clipboard": True,
             "auto_check_updates": True,
-            "default_quality": "Tốt nhất (Best)",
-            "default_format": "MP4",
-            "default_audio_format": "MP3 (320kbps)",
+            "default_quality": "🌟 Tốt nhất có thể (Chất lượng gốc cao nhất)",
+            "default_format": "MP4 (Tương thích cao nhất)",
+            "default_audio_format": "MP3 - 320 kbps (Cực cao - Studio Master)",
             "embed_subtitles": True,
             "sub_lang": "vi,en",
-            "browser_cookie": "none",  # none, chrome, edge, firefox, brave, opera, vivaldi
+            "browser_cookie": "none",  # none, chrome, edge, firefox, brave, opera, file
+            "cookie_file_path": "",
             "max_concurrent_downloads": 3
         }
 
@@ -60,22 +61,18 @@ class ConfigManager:
         if cfg_data is not None:
             self.config = cfg_data
         try:
-            # Tạo thư mục download mặc định nếu chưa có
-            dl_path = Path(self.config.get("download_dir", self.defaults["download_dir"]))
-            dl_path.mkdir(parents=True, exist_ok=True)
-
             with open(self.config_file, "w", encoding="utf-8") as f:
                 json.dump(self.config, f, indent=4, ensure_ascii=False)
             return True
         except Exception as e:
-            print(f"[Cấu hình] Lỗi khi lưu config.json: {e}")
+            print(f"[Cấu hình] Lỗi khi ghi file config.json: {e}")
             return False
 
     def get(self, key: str, default=None):
-        """Lấy giá trị cài đặt theo key."""
-        return self.config.get(key, self.defaults.get(key, default))
+        """Lấy giá trị cài đặt theo khóa."""
+        return self.config.get(key, default)
 
     def set(self, key: str, value) -> bool:
-        """Cập nhật giá trị cài đặt."""
+        """Cập nhật giá trị và lưu lại."""
         self.config[key] = value
         return self.save()

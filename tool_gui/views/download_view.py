@@ -1,6 +1,6 @@
 """
 Màn hình Tải Video Đơn (Download View).
-Tự động nhận diện URL, hiển thị thông tin metadata, thumbnail và bộ chọn chất lượng đa dạng 100% Tiếng Việt.
+Tự động nhận diện URL, bộ chọn Cookie đặt ngay trên cùng, metadata preview và bộ chọn chất lượng đa dạng 100% Tiếng Việt.
 """
 
 import os
@@ -37,9 +37,72 @@ class DownloadView(ctk.CTkFrame):
 
     def setup_ui(self):
         self.scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        self.scroll.pack(fill="both", expand=True, padx=20, pady=20)
+        self.scroll.pack(fill="both", expand=True, padx=20, pady=15)
 
-        # 1. KHUNG NHẬP LIÊN KẾT (URL INPUT CARD)
+        # =========================================================================
+        # 1. KHUNG CHỌN COOKIE / XÁC THỰC TRÊN CÙNG (TOP COOKIE BAR)
+        # =========================================================================
+        cookie_card = ctk.CTkFrame(self.scroll, corner_radius=12, fg_color=("#F1F5F9", "#1E293B"))
+        cookie_card.pack(fill="x", pady=(0, 12), padx=5)
+
+        cookie_inner = ctk.CTkFrame(cookie_card, fg_color="transparent")
+        cookie_inner.pack(fill="x", padx=15, pady=10)
+
+        lbl_cookie = ctk.CTkLabel(
+            cookie_inner,
+            text="🍪 Nguồn Cookie xác thực (Dành cho Facebook / Video riêng tư):",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("#2563EB", "#60A5FA")
+        )
+        lbl_cookie.pack(side="left", padx=(0, 10))
+
+        self.cookie_browser_combo = ctk.CTkComboBox(
+            cookie_inner,
+            values=[
+                "🌐 Không dùng Cookie (Mặc định)",
+                "🌐 Google Chrome",
+                "🌐 Microsoft Edge",
+                "🌐 Mozilla Firefox",
+                "🌐 Brave Browser",
+                "🌐 Opera",
+                "📁 Tệp Cookie riêng (.txt)"
+            ],
+            width=220,
+            height=32,
+            command=self.on_cookie_browser_changed
+        )
+        self.cookie_browser_combo.pack(side="left", padx=(0, 10))
+
+        # Khởi tạo giá trị cookie từ config
+        saved_cookie = self.config_manager.get("browser_cookie", "none")
+        cookie_map_rev = {
+            "none": "🌐 Không dùng Cookie (Mặc định)",
+            "chrome": "🌐 Google Chrome",
+            "edge": "🌐 Microsoft Edge",
+            "firefox": "🌐 Mozilla Firefox",
+            "brave": "🌐 Brave Browser",
+            "opera": "🌐 Opera",
+            "file": "📁 Tệp Cookie riêng (.txt)"
+        }
+        self.cookie_browser_combo.set(cookie_map_rev.get(saved_cookie, "🌐 Không dùng Cookie (Mặc định)"))
+
+        self.cookie_file_btn = ctk.CTkButton(
+            cookie_inner,
+            text="📂 Chọn file cookies.txt",
+            width=150,
+            height=32,
+            command=self.on_browse_cookie_file,
+            fg_color="#475569",
+            hover_color="#334155",
+            font=("Segoe UI", 11)
+        )
+        self.cookie_file_btn.pack(side="left")
+        if saved_cookie != "file":
+            self.cookie_file_btn.pack_forget()
+
+        # =========================================================================
+        # 2. KHUNG NHẬP LIÊN KẾT (URL INPUT CARD)
+        # =========================================================================
         input_card = ctk.CTkFrame(self.scroll, corner_radius=12)
         input_card.pack(fill="x", pady=(0, 15), padx=5)
 
@@ -51,9 +114,9 @@ class DownloadView(ctk.CTkFrame):
 
         self.url_entry = ctk.CTkEntry(
             url_bar,
-            placeholder_text="Dán link YouTube, TikTok, Facebook, Instagram, Bilibili...",
+            placeholder_text="Dán link YouTube, Facebook, TikTok, Instagram, Bilibili...",
             font=("Segoe UI", 12),
-            height=38
+            height=40
         )
         self.url_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
         self.url_entry.bind("<Return>", lambda e: self.on_analyze_clicked())
@@ -62,7 +125,7 @@ class DownloadView(ctk.CTkFrame):
             url_bar,
             text="📋 Dán link",
             width=100,
-            height=38,
+            height=40,
             command=self.on_paste_clicked,
             fg_color="#64748B",
             hover_color="#475569",
@@ -74,7 +137,7 @@ class DownloadView(ctk.CTkFrame):
             url_bar,
             text="🔍 Phân tích",
             width=110,
-            height=38,
+            height=40,
             command=self.on_analyze_clicked,
             fg_color="#3B82F6",
             hover_color="#2563EB",
@@ -82,7 +145,9 @@ class DownloadView(ctk.CTkFrame):
         )
         self.analyze_btn.pack(side="left")
 
-        # 2. KHUNG THÔNG TIN PREVIEW VIDEO (METADATA CARD)
+        # =========================================================================
+        # 3. KHUNG THÔNG TIN PREVIEW VIDEO (METADATA CARD)
+        # =========================================================================
         self.meta_card = ctk.CTkFrame(self.scroll, corner_radius=12)
         self.meta_card.pack(fill="x", pady=(0, 15), padx=5)
         self.meta_card.pack_forget()
@@ -90,11 +155,9 @@ class DownloadView(ctk.CTkFrame):
         meta_inner = ctk.CTkFrame(self.meta_card, fg_color="transparent")
         meta_inner.pack(fill="x", padx=15, pady=15)
 
-        # Cột trái: Thumbnail
         self.thumb_label = ctk.CTkLabel(meta_inner, text="", width=180, height=101, corner_radius=8, fg_color=("#E2E8F0", "#1E293B"))
         self.thumb_label.pack(side="left", padx=(0, 15))
 
-        # Cột phải: Thông tin chi tiết
         info_col = ctk.CTkFrame(meta_inner, fg_color="transparent")
         info_col.pack(side="left", fill="both", expand=True)
 
@@ -126,7 +189,9 @@ class DownloadView(ctk.CTkFrame):
         self.duration_label = ctk.CTkLabel(info_col, text="Thời lượng: --", font=("Segoe UI", 11), text_color=("#64748B", "#94A3B8"), anchor="w")
         self.duration_label.pack(anchor="w")
 
-        # 3. KHUNG TÙY CHỌN CHẤT LƯỢNG & ĐỊNH DẠNG (EXPANDED OPTIONS CARD)
+        # =========================================================================
+        # 4. KHUNG TÙY CHỌN CHẤT LƯỢNG & ĐỊNH DẠNG (EXPANDED OPTIONS CARD)
+        # =========================================================================
         opt_card = ctk.CTkFrame(self.scroll, corner_radius=12)
         opt_card.pack(fill="x", pady=(0, 15), padx=5)
 
@@ -250,7 +315,9 @@ class DownloadView(ctk.CTkFrame):
         )
         browse_btn.pack(side="right")
 
-        # 4. KHUNG TIẾN TRÌNH & NÚT BẮT ĐẦU TẢI (ACTION & PROGRESS CARD)
+        # =========================================================================
+        # 5. KHUNG TIẾN TRÌNH & NÚT BẮT ĐẦU TẢI (ACTION & PROGRESS CARD)
+        # =========================================================================
         action_card = ctk.CTkFrame(self.scroll, corner_radius=12)
         action_card.pack(fill="x", pady=(0, 15), padx=5)
 
@@ -291,6 +358,42 @@ class DownloadView(ctk.CTkFrame):
             corner_radius=8
         )
         self.open_folder_btn.pack(side="right")
+
+    def on_cookie_browser_changed(self, value):
+        """Xử lý thay đổi nguồn Cookie."""
+        val_map = {
+            "🌐 Không dùng Cookie (Mặc định)": "none",
+            "🌐 Google Chrome": "chrome",
+            "🌐 Microsoft Edge": "edge",
+            "🌐 Mozilla Firefox": "firefox",
+            "🌐 Brave Browser": "brave",
+            "🌐 Opera": "opera",
+            "📁 Tệp Cookie riêng (.txt)": "file"
+        }
+        key = val_map.get(value, "none")
+        self.config_manager.set("browser_cookie", key)
+
+        if key == "file":
+            self.cookie_file_btn.pack(side="left")
+            if not self.config_manager.get("cookie_file_path"):
+                self.on_browse_cookie_file()
+        else:
+            self.cookie_file_btn.pack_forget()
+
+        self.log(f"[Cài đặt] Đã chuyển nguồn Cookie sang: {value}")
+
+    def on_browse_cookie_file(self):
+        """Mở hộp thoại chọn tệp cookie .txt."""
+        fpath = filedialog.askopenfilename(
+            title="Chọn tệp cookies.txt (Netscape format)",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+        )
+        if fpath:
+            self.config_manager.set("cookie_file_path", fpath)
+            self.config_manager.set("browser_cookie", "file")
+            fname = Path(fpath).name
+            self.cookie_file_btn.configure(text=f"📄 {fname}")
+            self.log(f"[Cookie] Đã chọn tệp Cookie: {fpath}")
 
     def on_mode_changed(self, value):
         """Chuyển đổi giữa chế độ Video và Audio."""
@@ -347,7 +450,8 @@ class DownloadView(ctk.CTkFrame):
     def _analyze_worker(self, url: str):
         """Thực thi phân tích metadata trong background."""
         browser_cookie = self.config_manager.get("browser_cookie", "none")
-        success, meta, msg = URLDetector.fetch_metadata(url, cookie_browser=browser_cookie)
+        cookie_file = self.config_manager.get("cookie_file_path", "")
+        success, meta, msg = URLDetector.fetch_metadata(url, cookie_browser=browser_cookie, cookie_file=cookie_file)
 
         if success and meta:
             thumb_img = None
@@ -427,6 +531,7 @@ class DownloadView(ctk.CTkFrame):
         embed_thumb = bool(self.thumb_check.get())
         add_meta = bool(self.meta_check.get())
         cookie_browser = self.config_manager.get("browser_cookie", "none")
+        cookie_file = self.config_manager.get("cookie_file_path", "")
 
         direct_url = None
         if self.current_meta:
@@ -453,6 +558,7 @@ class DownloadView(ctk.CTkFrame):
             embed_thumbnail=embed_thumb,
             add_metadata=add_meta,
             cookie_browser=cookie_browser,
+            cookie_file=cookie_file,
             direct_url=direct_url,
             on_progress=self._on_download_progress,
             on_status=self._on_download_status,
