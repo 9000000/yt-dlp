@@ -602,11 +602,46 @@ class DownloadView(ctk.CTkFrame):
 
     def on_scan_current_browser_page(self):
         cur = self.get_current_browser_url()
-        self.log(f"[Trình duyệt] Quét toàn bộ video trên trang: {cur}")
-        self.show_batch_mode()
-        self.text_urls.delete("1.0", "end")
-        self.text_urls.insert("end", cur + "\n")
-        self.on_start_batch()
+        self.log(f"[Trình duyệt] Bắt đầu quét toàn bộ video trên trang: {cur}")
+        self.btn_scan_page.configure(state="disabled", text="⏳ Đang quét...")
+
+        def _worker():
+            ok, results, msg = PageVideoScanner.scan_webpage_for_videos(cur)
+            self.after(0, lambda: self._on_scan_finished(ok, results, msg, cur))
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _on_scan_finished(self, ok: bool, results: list, msg: str, cur_url: str):
+        self.btn_scan_page.configure(state="normal", text="🔍 QUÉT VIDEO TRANG NÀY")
+        self.log(f"[Quét video] {msg}")
+
+        if not ok or not results:
+            msgbox.showinfo("Kết quả quét", f"Không tìm thấy video nào trên trang web này:\n{msg}")
+            return
+
+        # Mở hộp thoại hiển thị danh sách video quét được với Thumbnail
+        from tool_gui.views.scan_results_dialog import ScanResultsDialog
+
+        def on_export_batch(selected_urls: list):
+            self.show_batch_mode()
+            self.text_urls.delete("1.0", "end")
+            self.text_urls.insert("end", "\n".join(selected_urls) + "\n")
+            self.log(f"[Tải hàng loạt] Đã nạp {len(selected_urls)} video đã chọn vào danh sách.")
+            msgbox.showinfo("Đã nạp", f"Đã nạp {len(selected_urls)} video vào danh sách Tải Hàng Loạt!\nBạn có thể tùy chỉnh định dạng và bấm 'BẮT ĐẦU TẢI DANH SÁCH' khi sẵn sàng.")
+
+        def on_download_single(single_url: str):
+            self.show_single_mode()
+            self.universal_entry.delete(0, "end")
+            self.universal_entry.insert(0, single_url)
+            self.start_analyze_single_url(single_url)
+
+        ScanResultsDialog(
+            master=self.winfo_toplevel(),
+            url=cur_url,
+            results=results,
+            on_export_batch=on_export_batch,
+            on_download_single=on_download_single
+        )
 
     def on_download_current_browser_video(self):
         cur = self.get_current_browser_url()

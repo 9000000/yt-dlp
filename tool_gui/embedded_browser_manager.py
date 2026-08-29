@@ -1,10 +1,8 @@
 """
 Module Quản Lý Trình Duyệt Chromium (Edge WebView2) Nhúng Trực Tiếp Vào GUI.
-Nhúng cửa sổ Chromium Native vào trong khung Tkinter (WS_CHILD) với thanh công cụ điều hướng đầy đủ:
-- Thanh địa chỉ URL & Tìm kiếm
-- Các nút điều hướng (Trang chủ, Quay lại, Tiếp, Tải lại)
-- Nút Quét Video Trang Web & Tải Video Đang Xem
-- Đồng bộ URL và điều khiển kích thước tự động.
+- Nhúng cửa sổ Chromium Native vào trong khung Tkinter (WS_CHILD).
+- Tự động co giãn 100% mượt mà khi phóng to toàn màn hình (Fullscreen/Maximize) hoặc thay đổi kích thước.
+- Đồng bộ URL hai chiều và điều khiển chuyển trang.
 """
 
 import os
@@ -12,6 +10,7 @@ import sys
 import time
 import json
 import ctypes
+import ctypes.wintypes
 from pathlib import Path
 import subprocess
 import threading
@@ -26,8 +25,8 @@ class EmbeddedBrowserManager:
         self.sync_url_file = self.app_dir / ".current_browser_url.txt"
         self.action_file = self.app_dir / ".browser_action.json"
         self.cmd_file = self.app_dir / ".browser_cmd.json"
-        self.child_hwnd = None
         self.proc = None
+        self._enum_cb = None
 
     def start(self, width: int = 1100, height: int = 650):
         # Thiết lập style WS_CLIPCHILDREN cho cửa sổ cha
@@ -52,29 +51,34 @@ cmd_file = app_dir / '.browser_cmd.json'
 initial_url = r'{self.initial_url}'
 
 window = None
+target_hwnd = None
 
 def attach_and_sync():
-    global window
+    global window, target_hwnd
     # Đợi cửa sổ tạo xong
-    time.sleep(0.5)
-    target_title = 'ToolDL_Embedded_Chromium_Surface'
-    hwnd = ctypes.windll.user32.FindWindowW(None, target_title)
+    for _ in range(20):
+        time.sleep(0.15)
+        target_title = 'ToolDL_Embedded_Chromium_Surface'
+        hwnd = ctypes.windll.user32.FindWindowW(None, target_title)
+        if hwnd:
+            target_hwnd = hwnd
+            break
     
-    if hwnd and p_hwnd:
+    if target_hwnd and p_hwnd:
         GWL_STYLE = -16
         WS_CHILD = 0x40000000
         WS_VISIBLE = 0x10000000
         WS_POPUP = 0x80000000
         
-        old_style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
+        old_style = ctypes.windll.user32.GetWindowLongW(target_hwnd, GWL_STYLE)
         new_style = (old_style & ~WS_POPUP) | WS_CHILD | WS_VISIBLE
-        ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, new_style)
-        ctypes.windll.user32.SetParent(hwnd, p_hwnd)
-        ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, {width}, {height}, 0x0040 | 0x0020)
+        ctypes.windll.user32.SetWindowLongW(target_hwnd, GWL_STYLE, new_style)
+        ctypes.windll.user32.SetParent(target_hwnd, p_hwnd)
+        ctypes.windll.user32.SetWindowPos(target_hwnd, 0, 0, 0, {width}, {height}, 0x0040 | 0x0020)
 
     last_cmd_time = 0
     while True:
-        time.sleep(0.8)
+        time.sleep(0.5)
         try:
             if window:
                 cur = window.get_current_url()
@@ -84,7 +88,7 @@ def attach_and_sync():
         except Exception:
             pass
 
-        # Lắng nghe lệnh từ GUI (Navigate, Back, Forward, Reload)
+        # Lắng nghe lệnh từ GUI (Navigate, Back, Forward, Reload, Resize)
         try:
             if cmd_file.exists():
                 with open(cmd_file, 'r', encoding='utf-8') as f:
@@ -102,6 +106,12 @@ def attach_and_sync():
                         window.evaluate_js('window.history.back();')
                     elif cmd == 'forward' and window:
                         window.evaluate_js('window.history.forward();')
+                    elif cmd == 'resize' and window and isinstance(arg, dict):
+                        w_val = arg.get('w', {width})
+                        h_val = arg.get('h', {height})
+                        window.resize(w_val, h_val)
+                        if target_hwnd:
+                            ctypes.windll.user32.SetWindowPos(target_hwnd, 0, 0, 0, w_val, h_val, 0x0004 | 0x0010 | 0x0040)
         except Exception:
             pass
 
@@ -119,16 +129,30 @@ webview.start()
         self.proc = subprocess.Popen([sys.executable, "-c", sub_code])
 
     def resize(self, width: int, height: int):
-        """Thay đổi kích thước cửa sổ nhúng khi người dùng co giãn cửa sổ chính."""
+        """Thay đổi kích thước cửa sổ nhúng khi người dùng co giãn hoặc phóng to full màn hình."""
+        if width <= 0 or height <= 0:
+            return
+
+        # 1. Gửi lệnh resize tới pywebview
+        self.send_cmd("resize", {"w": width, "h": height})
+
+        # 2. Resize trực tiếp tất cả HWND con bên trong parent_hwnd
         try:
-            hwnd = ctypes.windll.user32.FindWindowW(None, 'ToolDL_Embedded_Chromium_Surface')
-            if hwnd:
-                ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, width, height, 0x0004 | 0x0010) # SWP_NOZORDER | SWP_NOACTIVATE
+            WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM)
+            def _enum_proc(hwnd, lparam):
+                ctypes.windll.user32.SetWindowPos(
+                    hwnd, 0, 0, 0, width, height,
+                    0x0004 | 0x0010 | 0x0040 # SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW
+                )
+                return True
+
+            self._enum_cb = WNDENUMPROC(_enum_proc)
+            ctypes.windll.user32.EnumChildWindows(self.parent_hwnd, self._enum_cb, 0)
         except Exception:
             pass
 
-    def send_cmd(self, cmd: str, arg: str = ""):
-        """Gửi lệnh điều khiển trình duyệt (navigate, reload, back, forward)."""
+    def send_cmd(self, cmd: str, arg: any = ""):
+        """Gửi lệnh điều khiển trình duyệt (navigate, reload, back, forward, resize)."""
         try:
             with open(self.cmd_file, "w", encoding="utf-8") as f:
                 json.dump({"cmd": cmd, "arg": arg, "time": time.time()}, f)
