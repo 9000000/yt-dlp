@@ -87,11 +87,11 @@ class ToolDLApp(ctk.CTk):
 
         # Các nút điều hướng
         nav_items = [
-            ("download", "📥  Tải Video", self.show_download_view),
-            ("batch", "📋  Tải Hàng Loạt", self.show_batch_view),
-            ("tools", "🛠️  Quản Lý Phụ Trợ", self.show_tools_view),
-            ("settings", "⚙️  Cài Đặt", self.show_settings_view),
-            ("logs", "📜  Nhật Ký", self.show_log_view),
+            ("download", "📥 Tải Video", self.show_download_view),
+            ("batch", "📋 Tải Hàng Loạt", self.show_batch_view),
+            ("tools", "🔧 Quản Lý Phụ Trợ", self.show_tools_view),
+            ("settings", "⚙ Cài Đặt", self.show_settings_view),
+            ("logs", "📜 Nhật Ký", self.show_log_view),
         ]
 
         for i, (key, title, cmd) in enumerate(nav_items):
