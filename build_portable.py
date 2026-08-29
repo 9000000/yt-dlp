@@ -1,6 +1,6 @@
 """
 Script Đóng Gói Ứng Dụng Thành Bản Portable ZIP Độc Lập (Build Portable Package).
-Sử dụng PyInstaller đóng gói toàn bộ mã nguồn, thư viện, PO Token Plugin và FFmpeg thành file ToolDL_Portable.zip.
+Sử dụng PyInstaller đóng gói toàn bộ mã nguồn, thư viện, Trình duyệt Web, PO Token Plugin và FFmpeg thành file ToolDL_Portable.zip.
 """
 
 import os
@@ -55,16 +55,20 @@ def run_pyinstaller():
         "--collect-all=yt_dlp_plugins",
         "--collect-all=curl_cffi",
         "--collect-all=PIL",
+        "--collect-all=webview",
         "--hidden-import=tool_gui",
         "--hidden-import=tool_gui.license_manager",
         "--hidden-import=tool_gui.updater",
         "--hidden-import=tool_gui.downloader",
         "--hidden-import=tool_gui.url_detector",
+        "--hidden-import=tool_gui.page_scanner",
         "--hidden-import=tool_gui.config",
         "--hidden-import=tool_gui.views",
         "--hidden-import=tool_gui.views.activation_view",
         "--hidden-import=tool_gui.views.download_view",
         "--hidden-import=tool_gui.views.batch_view",
+        "--hidden-import=tool_gui.views.search_view",
+        "--hidden-import=tool_gui.views.browser_view",
         "--hidden-import=tool_gui.views.tools_view",
         "--hidden-import=tool_gui.views.settings_view",
         "--hidden-import=tool_gui.views.log_view",
@@ -115,6 +119,8 @@ def copy_assets():
    - Dán mã Key vào ô và bấm "KÍCH HOẠT BẢN QUYỀN NGAY".
 
 3. TÍNH NĂNG NỔI BẬT:
+   - Tìm kiếm video trực tiếp theo từ khóa & Chọn nhiều video tải hàng loạt.
+   - Tích hợp Trình duyệt Web & Quét toàn bộ video trên trang.
    - Tự động nhận diện link video từ khay nhớ tạm (Clipboard).
    - Tải video 8K / 4K / 1080p / Âm thanh MP3 320kbps từ YouTube, TikTok,
      Facebook, Instagram, Bilibili, Douyin và hơn 1000 trang web khác.
