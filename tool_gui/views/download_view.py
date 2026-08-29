@@ -470,11 +470,6 @@ class DownloadView(ctk.CTkFrame):
         else:
             self.thumb_label.configure(image=None, text="🖼️ Không có ảnh")
 
-        qualities = meta.get("qualities", [])
-        if qualities:
-            self.quality_combo.configure(values=qualities)
-            self.quality_combo.set(qualities[0])
-
         # Đặt lại format tùy chỉnh khi phân tích video mới
         self.on_clear_custom_format()
 
@@ -1017,14 +1012,8 @@ class DownloadView(ctk.CTkFrame):
         pot_url = self.config_manager.get("youtube_pot_provider_url", "")
         dns_servers = self.config_manager.get_dns_servers()
 
-        active_p_name = self.preset_combo.get() if hasattr(self, 'preset_combo') else ""
-        p = self.config_manager.get_preset_by_name(active_p_name) or {}
-        concurrent_fragments = p.get("concurrent_fragments", 4)
-        ratelimit = p.get("ratelimit", "")
-        auto_subs = p.get("auto_subs", True)
-        split_chapters = bool(self.split_chap_check.get()) if hasattr(self, 'split_chap_check') else p.get("split_chapters", False)
-        video_codec = self.codec_combo.get() if hasattr(self, 'codec_combo') and not audio_only else p.get("video_codec", "")
-        fps_prefer = self.fps_combo.get() if hasattr(self, 'fps_combo') and not audio_only else p.get("fps_prefer", "")
+        video_codec = p.get("video_codec", "")
+        fps_prefer = p.get("fps_prefer", "")
 
         direct_url = None
         if self.current_meta:
