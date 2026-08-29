@@ -1,6 +1,5 @@
 """
-Màn hình Tải Video Hàng Loạt & Danh Sách Phát (Batch & Playlist View).
-Hỗ trợ tải nhiều link cùng lúc hoặc toàn bộ Playlist với các cột hiển thị Tiêu đề, Thời lượng, URL và Trạng thái riêng biệt 100% Tiếng Việt.
+Màn hình Tải Video Hàng Loạt (Batch & Playlist View) - Bố Cục Tinh Gọn Xem Trọn Một Màn Hình.
 """
 
 import os
@@ -21,7 +20,7 @@ class BatchView(ctk.CTkFrame):
         self.config_manager = config_manager
         self.log_callback = log_callback
 
-        self.queue_items = []  # list of {url, title_lbl, duration_lbl, status_lbl, status}
+        self.queue_items = []
         self.is_running = False
         self.current_index = 0
 
@@ -32,119 +31,112 @@ class BatchView(ctk.CTkFrame):
             self.log_callback(msg)
 
     def setup_ui(self):
-        self.scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        self.scroll.pack(fill="both", expand=True, padx=20, pady=15)
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(fill="both", expand=True, padx=15, pady=12)
 
         # =========================================================================
-        # 1. KHUNG NHẬP DANH SÁCH URL (BATCH INPUT CARD)
+        # 1. KHU VỰC NHẬP DANH SÁCH & CÀI ĐẶT NHANH (TOP SECTION - 2 CỘT)
         # =========================================================================
-        input_card = ctk.CTkFrame(self.scroll, corner_radius=12)
-        input_card.pack(fill="x", pady=(0, 15), padx=5)
+        top_grid = ctk.CTkFrame(main_container, corner_radius=10)
+        top_grid.pack(fill="x", pady=(0, 10))
 
-        lbl_title = ctk.CTkLabel(input_card, text="📋 Nhập danh sách URL (mỗi dòng một link) hoặc Link Danh sách phát:", font=("Segoe UI", 13, "bold"))
-        lbl_title.pack(anchor="w", padx=15, pady=(12, 6))
+        top_inner = ctk.CTkFrame(top_grid, fg_color="transparent")
+        top_inner.pack(fill="x", padx=12, pady=10)
+        top_inner.grid_columnconfigure(0, weight=6)
+        top_inner.grid_columnconfigure(1, weight=4)
 
-        self.text_urls = ctk.CTkTextbox(input_card, height=120, font=("Consolas", 12))
-        self.text_urls.pack(fill="x", padx=15, pady=(0, 10))
+        # Cột trái: Ô nhập danh sách link
+        left_input = ctk.CTkFrame(top_inner, fg_color="transparent")
+        left_input.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
 
-        # Khung cài đặt nhanh
-        opt_bar = ctk.CTkFrame(input_card, fg_color="transparent")
-        opt_bar.pack(fill="x", padx=15, pady=(0, 12))
-        opt_bar.grid_columnconfigure((0, 1, 2), weight=1)
+        ctk.CTkLabel(left_input, text="📋 Danh sách liên kết (mỗi dòng 1 link hoặc link Playlist):", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(0, 4))
+        self.text_urls = ctk.CTkTextbox(left_input, height=90, font=("Consolas", 11))
+        self.text_urls.pack(fill="both", expand=True)
 
-        # Định dạng & Chất lượng
+        # Cột phải: Tùy chọn định dạng & Điều khiển
+        right_ctrl = ctk.CTkFrame(top_inner, fg_color="transparent")
+        right_ctrl.grid(row=0, column=1, sticky="nsew", padx=(8, 0))
+
+        ctk.CTkLabel(right_ctrl, text="⚙️ Cài đặt nhanh:", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(0, 4))
+
+        row_opt = ctk.CTkFrame(right_ctrl, fg_color="transparent")
+        row_opt.pack(fill="x", pady=(0, 4))
+
         self.fmt_combo = ctk.CTkComboBox(
-            opt_bar,
-            values=[
-                "🌟 Video MP4 (Tốt nhất)",
-                "🎬 Video Full HD 1080p",
-                "📱 Video HD 720p",
-                "🎵 Âm thanh MP3 (320kbps)",
-                "🎵 Âm thanh M4A (Gốc)"
-            ],
-            height=34
+            row_opt,
+            values=["🌟 Video MP4 (Gốc)", "🎬 Video 1080p", "📱 Video 720p", "🎵 Âm thanh MP3 320k", "🎵 Âm thanh M4A"],
+            height=28
         )
-        self.fmt_combo.set("🌟 Video MP4 (Tốt nhất)")
-        self.fmt_combo.grid(row=0, column=0, padx=5, sticky="ew")
+        self.fmt_combo.set("🌟 Video MP4 (Gốc)")
+        self.fmt_combo.pack(side="left", fill="x", expand=True, padx=(0, 4))
 
-        # Khoảng video playlist
-        self.range_entry = ctk.CTkEntry(opt_bar, placeholder_text="Phạm vi playlist (VD: 1-10 hoặc để trống)", height=34)
-        self.range_entry.grid(row=0, column=1, padx=5, sticky="ew")
+        paste_btn = ctk.CTkButton(row_opt, text="📋 Dán", width=55, height=28, command=self.on_paste_all, fg_color="#64748B", hover_color="#475569")
+        paste_btn.pack(side="right")
 
-        # Nút dán từ clipboard
-        paste_btn = ctk.CTkButton(
-            opt_bar,
-            text="📋 Dán từ Clipboard",
-            height=34,
-            command=self.on_paste_all,
-            fg_color="#64748B",
-            hover_color="#475569"
-        )
-        paste_btn.grid(row=0, column=2, padx=5, sticky="ew")
+        self.range_entry = ctk.CTkEntry(right_ctrl, placeholder_text="Phạm vi playlist (VD: 1-10 hoặc để trống)", height=28, font=("Segoe UI", 10))
+        self.range_entry.pack(fill="x", pady=(0, 6))
 
-        # =========================================================================
-        # 2. KHUNG TIẾN TRÌNH & NÚT ĐIỀU KHIỂN
-        # =========================================================================
-        ctrl_card = ctk.CTkFrame(self.scroll, corner_radius=12)
-        ctrl_card.pack(fill="x", pady=(0, 15), padx=5)
-
-        self.total_prog_lbl = ctk.CTkLabel(ctrl_card, text="Trạng thái: Chưa có tác vụ nào trong hàng đợi", font=("Segoe UI", 12, "bold"))
-        self.total_prog_lbl.pack(anchor="w", padx=15, pady=(12, 4))
-
-        self.total_bar = ctk.CTkProgressBar(ctrl_card, height=12, corner_radius=6)
-        self.total_bar.set(0.0)
-        self.total_bar.pack(fill="x", padx=15, pady=(0, 12))
-
-        btn_row = ctk.CTkFrame(ctrl_card, fg_color="transparent")
-        btn_row.pack(fill="x", padx=15, pady=(0, 15))
+        btn_bar = ctk.CTkFrame(right_ctrl, fg_color="transparent")
+        btn_bar.pack(fill="x")
 
         self.start_btn = ctk.CTkButton(
-            btn_row,
-            text="▶️ BẮT ĐẦU TẢI DANH SÁCH",
-            height=42,
+            btn_bar,
+            text="▶️ BẮT ĐẦU TẢI",
+            height=32,
             command=self.on_start_batch,
             fg_color="#10B981",
             hover_color="#059669",
-            font=("Segoe UI", 13, "bold")
+            font=("Segoe UI", 12, "bold")
         )
-        self.start_btn.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self.start_btn.pack(side="left", fill="x", expand=True, padx=(0, 6))
 
         self.clear_btn = ctk.CTkButton(
-            btn_row,
-            text="🧹 Xóa danh sách",
-            width=130,
-            height=42,
+            btn_bar,
+            text="🧹 Xóa",
+            width=70,
+            height=32,
             command=self.on_clear_batch,
             fg_color="#EF4444",
             hover_color="#DC2626",
-            font=("Segoe UI", 12, "bold")
+            font=("Segoe UI", 11, "bold")
         )
         self.clear_btn.pack(side="right")
 
         # =========================================================================
-        # 3. KHUNG BẢNG HÀNG ĐỢI VỚI CỘT HIỂN THỊ CHI TIẾT RIÊNG (QUEUE TABLE)
+        # 2. KHUNG TIẾN TRÌNH & BẢNG DANH SÁCH HÀNG ĐỢI (BOTTOM SECTION)
         # =========================================================================
-        self.queue_card = ctk.CTkFrame(self.scroll, corner_radius=12)
-        self.queue_card.pack(fill="both", expand=True, pady=(0, 10), padx=5)
+        queue_card = ctk.CTkFrame(main_container, corner_radius=10)
+        queue_card.pack(fill="both", expand=True)
 
-        q_title = ctk.CTkLabel(self.queue_card, text="📑 Danh sách video hàng đợi (kèm cột Tiêu đề & Thời lượng riêng):", font=("Segoe UI", 13, "bold"))
-        q_title.pack(anchor="w", padx=15, pady=(12, 6))
+        q_inner = ctk.CTkFrame(queue_card, fg_color="transparent")
+        q_inner.pack(fill="both", expand=True, padx=12, pady=10)
 
-        # Tiêu đề các cột trong bảng
-        tbl_header = ctk.CTkFrame(self.queue_card, fg_color=("#CBD5E1", "#334155"), corner_radius=6, height=32)
-        tbl_header.pack(fill="x", padx=15, pady=(0, 6))
+        # Thanh tiến trình tổng thể
+        prog_row = ctk.CTkFrame(q_inner, fg_color="transparent")
+        prog_row.pack(fill="x", pady=(0, 4))
 
-        ctk.CTkLabel(tbl_header, text="STT", width=45, font=("Segoe UI", 11, "bold")).pack(side="left", padx=5)
-        ctk.CTkLabel(tbl_header, text="🎬 Tiêu đề Video", anchor="w", width=260, font=("Segoe UI", 11, "bold")).pack(side="left", padx=5)
-        ctk.CTkLabel(tbl_header, text="⏱️ Thời lượng", width=90, font=("Segoe UI", 11, "bold")).pack(side="left", padx=5)
-        ctk.CTkLabel(tbl_header, text="🔗 Đường dẫn URL", anchor="w", font=("Segoe UI", 11, "bold")).pack(side="left", fill="x", expand=True, padx=5)
-        ctk.CTkLabel(tbl_header, text="Trạng thái", width=120, font=("Segoe UI", 11, "bold")).pack(side="right", padx=10)
+        self.total_prog_lbl = ctk.CTkLabel(prog_row, text="Trạng thái: Chưa có tác vụ nào", font=("Segoe UI", 11, "bold"))
+        self.total_prog_lbl.pack(side="left")
 
-        self.queue_frame = ctk.CTkFrame(self.queue_card, fg_color="transparent")
-        self.queue_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
+        self.total_bar = ctk.CTkProgressBar(q_inner, height=8, corner_radius=4)
+        self.total_bar.set(0.0)
+        self.total_bar.pack(fill="x", pady=(0, 8))
+
+        # Tiêu đề bảng hàng đợi
+        tbl_header = ctk.CTkFrame(q_inner, fg_color=("#CBD5E1", "#334155"), corner_radius=6, height=26)
+        tbl_header.pack(fill="x", pady=(0, 4))
+
+        ctk.CTkLabel(tbl_header, text="STT", width=40, font=("Segoe UI", 10, "bold")).pack(side="left", padx=4)
+        ctk.CTkLabel(tbl_header, text="🎬 Tiêu đề Video", anchor="w", width=280, font=("Segoe UI", 10, "bold")).pack(side="left", padx=4)
+        ctk.CTkLabel(tbl_header, text="⏱️ Thời lượng", width=80, font=("Segoe UI", 10, "bold")).pack(side="left", padx=4)
+        ctk.CTkLabel(tbl_header, text="🔗 Đường dẫn URL", anchor="w", font=("Segoe UI", 10, "bold")).pack(side="left", fill="x", expand=True, padx=4)
+        ctk.CTkLabel(tbl_header, text="Trạng thái", width=110, font=("Segoe UI", 10, "bold")).pack(side="right", padx=8)
+
+        # Khung chứa các dòng danh sách
+        self.queue_scroll = ctk.CTkScrollableFrame(q_inner, fg_color="transparent")
+        self.queue_scroll.pack(fill="both", expand=True)
 
     def on_paste_all(self):
-        """Dán văn bản từ clipboard."""
         try:
             val = self.clipboard_get()
             if val:
@@ -153,23 +145,21 @@ class BatchView(ctk.CTkFrame):
             pass
 
     def on_clear_batch(self):
-        """Xóa toàn bộ hàng đợi."""
         if self.is_running:
             msgbox.showwarning("Cảnh báo", "Đang trong quá trình tải, không thể xóa danh sách!")
             return
         self.text_urls.delete("1.0", "end")
-        for widget in self.queue_frame.winfo_children():
+        for widget in self.queue_scroll.winfo_children():
             widget.destroy()
         self.queue_items.clear()
         self.total_bar.set(0.0)
         self.total_prog_lbl.configure(text="Trạng thái: Đã dọn sạch danh sách")
 
     def on_start_batch(self):
-        """Bắt đầu tải từng video trong danh sách."""
         if self.is_running:
             self.is_running = False
-            self.start_btn.configure(text="▶️ BẮT ĐẦU TẢI DANH SÁCH", fg_color="#10B981", hover_color="#059669")
-            self.total_prog_lbl.configure(text="⏹️ Đã dừng tiến trình tải hàng loạt.")
+            self.start_btn.configure(text="▶️ BẮT ĐẦU TẢI", fg_color="#10B981", hover_color="#059669")
+            self.total_prog_lbl.configure(text="⏹️ Đã dừng tiến trình tải.")
             return
 
         raw_text = self.text_urls.get("1.0", "end").strip()
@@ -179,28 +169,28 @@ class BatchView(ctk.CTkFrame):
             msgbox.showwarning("Cảnh báo", "Vui lòng nhập ít nhất một đường dẫn hợp lệ!")
             return
 
-        for widget in self.queue_frame.winfo_children():
+        for widget in self.queue_scroll.winfo_children():
             widget.destroy()
         self.queue_items.clear()
 
         for idx, url in enumerate(lines):
-            row_frame = ctk.CTkFrame(self.queue_frame, fg_color=("#E2E8F0", "#1E293B"), corner_radius=8)
-            row_frame.pack(fill="x", pady=3)
+            row_frame = ctk.CTkFrame(self.queue_scroll, fg_color=("#E2E8F0", "#1E293B"), corner_radius=6, height=30)
+            row_frame.pack(fill="x", pady=2)
 
-            idx_lbl = ctk.CTkLabel(row_frame, text=f"#{idx+1}", width=45, font=("Segoe UI", 11, "bold"))
-            idx_lbl.pack(side="left", padx=5)
+            idx_lbl = ctk.CTkLabel(row_frame, text=f"#{idx+1}", width=40, font=("Segoe UI", 10, "bold"))
+            idx_lbl.pack(side="left", padx=4)
 
-            title_lbl = ctk.CTkLabel(row_frame, text="Đang chờ phân tích...", width=260, anchor="w", font=("Segoe UI", 11, "bold"))
-            title_lbl.pack(side="left", padx=5)
+            title_lbl = ctk.CTkLabel(row_frame, text="Đang chờ phân tích...", width=280, anchor="w", font=("Segoe UI", 10, "bold"))
+            title_lbl.pack(side="left", padx=4)
 
-            dur_lbl = ctk.CTkLabel(row_frame, text="--:--", width=90, font=("Segoe UI", 11), text_color=("#64748B", "#94A3B8"))
-            dur_lbl.pack(side="left", padx=5)
+            dur_lbl = ctk.CTkLabel(row_frame, text="--:--", width=80, font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"))
+            dur_lbl.pack(side="left", padx=4)
 
-            url_lbl = ctk.CTkLabel(row_frame, text=url, anchor="w", font=("Segoe UI", 10), text_color=("#475569", "#94A3B8"))
-            url_lbl.pack(side="left", fill="x", expand=True, padx=5)
+            url_lbl = ctk.CTkLabel(row_frame, text=url, anchor="w", font=("Segoe UI", 9), text_color=("#475569", "#94A3B8"))
+            url_lbl.pack(side="left", fill="x", expand=True, padx=4)
 
-            status_lbl = ctk.CTkLabel(row_frame, text="🕒 Chờ tải", width=120, font=("Segoe UI", 11, "bold"), text_color="#64748B")
-            status_lbl.pack(side="right", padx=10)
+            status_lbl = ctk.CTkLabel(row_frame, text="🕒 Chờ", width=110, font=("Segoe UI", 10, "bold"), text_color="#64748B")
+            status_lbl.pack(side="right", padx=8)
 
             self.queue_items.append({
                 "url": url,
@@ -212,14 +202,13 @@ class BatchView(ctk.CTkFrame):
 
         self.is_running = True
         self.current_index = 0
-        self.start_btn.configure(text="⏹️ DỪNG TIẾN TRÌNH", fg_color="#EF4444", hover_color="#DC2626")
+        self.start_btn.configure(text="⏹️ DỪNG LẠI", fg_color="#EF4444", hover_color="#DC2626")
         self.total_bar.set(0.0)
         self.log(f"[Tải hàng loạt] Bắt đầu tải {len(self.queue_items)} mục...")
 
         threading.Thread(target=self._process_batch, daemon=True).start()
 
     def _process_batch(self):
-        """Xử lý tải tuần tự các mục trong hàng đợi."""
         total = len(self.queue_items)
         out_dir = self.config_manager.get("download_dir")
         fmt_choice = self.fmt_combo.get()
@@ -235,6 +224,8 @@ class BatchView(ctk.CTkFrame):
         out_fmt = "mp3" if "MP3" in fmt_choice else ("m4a" if "M4A" in fmt_choice else "mp4")
         cookie_browser = self.config_manager.get("browser_cookie", "none")
         cookie_file = self.config_manager.get("cookie_file_path", "")
+        pot_enabled = self.config_manager.get("youtube_pot_enabled", True)
+        pot_url = self.config_manager.get("youtube_pot_provider_url", "")
 
         for idx, item in enumerate(self.queue_items):
             if not self.is_running:
@@ -246,19 +237,18 @@ class BatchView(ctk.CTkFrame):
             dur_lbl = item["dur_lbl"]
             status_lbl = item["status_lbl"]
 
-            # Phân tích nhanh metadata
             self.after(0, lambda sl=status_lbl, i=idx: (
-                sl.configure(text="🔍 Đang lấy thông tin...", text_color="#3B82F6"),
+                sl.configure(text="🔍 Đang đọc...", text_color="#3B82F6"),
                 self.total_prog_lbl.configure(text=f"Đang xử lý mục {i+1}/{total}..."),
                 self.total_bar.set(i / total)
             ))
 
-            ok, meta, _ = URLDetector.fetch_metadata(url, cookie_browser=cookie_browser, cookie_file=cookie_file)
+            ok, meta, _ = URLDetector.fetch_metadata(url, cookie_browser=cookie_browser, cookie_file=cookie_file, pot_enabled=pot_enabled, pot_provider_url=pot_url)
             if ok and meta:
                 v_title = meta.get("title", url)
                 v_dur = meta.get("duration_str", "--:--")
                 self.after(0, lambda tl=title_lbl, dl=dur_lbl, t=v_title, d=v_dur: (
-                    tl.configure(text=t[:35] + "..." if len(t) > 35 else t),
+                    tl.configure(text=t[:38] + "..." if len(t) > 38 else t),
                     dl.configure(text=d)
                 ))
 
@@ -280,6 +270,8 @@ class BatchView(ctk.CTkFrame):
                 audio_codec=out_fmt,
                 cookie_browser=cookie_browser,
                 cookie_file=cookie_file,
+                pot_enabled=pot_enabled,
+                pot_provider_url=pot_url,
                 playlist_items=playlist_range,
                 on_finish=on_finish
             )
@@ -287,7 +279,7 @@ class BatchView(ctk.CTkFrame):
             finished_event.wait()
 
             if success_box[0]:
-                self.after(0, lambda sl=status_lbl: sl.configure(text="✅ Hoàn tất", text_color="#10B981"))
+                self.after(0, lambda sl=status_lbl: sl.configure(text="✅ Xong", text_color="#10B981"))
             else:
                 self.after(0, lambda sl=status_lbl: sl.configure(text="❌ Lỗi", text_color="#EF4444"))
 
@@ -295,8 +287,8 @@ class BatchView(ctk.CTkFrame):
 
     def _finish_batch(self, total: int):
         self.is_running = False
-        self.start_btn.configure(text="▶️ BẮT ĐẦU TẢI DANH SÁCH", fg_color="#10B981", hover_color="#059669")
+        self.start_btn.configure(text="▶️ BẮT ĐẦU TẢI", fg_color="#10B981", hover_color="#059669")
         self.total_bar.set(1.0)
-        self.total_prog_lbl.configure(text=f"✅ Đã hoàn tất xử lý {total} mục trong hàng đợi!")
+        self.total_prog_lbl.configure(text=f"✅ Đã hoàn tất {total} mục!")
         self.log(f"[Tải hàng loạt] Hoàn tất {total} mục.")
         msgbox.showinfo("Hoàn tất", f"Đã hoàn thành quá trình tải hàng loạt ({total} mục)!")
