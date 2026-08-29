@@ -83,11 +83,15 @@ class FormatPickerDialog(ctk.CTkToplevel):
             if not fid:
                 continue
 
-            vcodec = f.get("vcodec") or "none"
-            acodec = f.get("acodec") or "none"
-            has_v = (vcodec != "none")
-            has_a = (acodec != "none")
-            ext = f.get("ext", "")
+            # Bỏ qua các ảnh Storyboard thumbnail của YouTube
+            proto = str(f.get("protocol", "")).lower()
+            ext = str(f.get("ext", "")).lower()
+            note = str(f.get("format_note", "") or "")
+            if proto == "mhtml" or ext == "mhtml" or "storyboard" in note.lower() or fid.startswith("sb"):
+                continue
+
+            vcodec = str(f.get("vcodec") or "none")
+            acodec = str(f.get("acodec") or "none")
             height = f.get("height") or 0
             width = f.get("width") or 0
             fps = f.get("fps") or 0
@@ -95,9 +99,11 @@ class FormatPickerDialog(ctk.CTkToplevel):
             vbr = f.get("vbr") or 0
             abr = f.get("abr") or 0
             filesize = f.get("filesize") or f.get("filesize_approx")
-            note = f.get("format_note") or ""
             lang = f.get("language") or ""
             asr = f.get("asr") or 0
+
+            has_v = (vcodec != "none" and bool(vcodec)) or (height and height > 0) or (f.get("video_ext") and f.get("video_ext") != "none")
+            has_a = (acodec != "none" and bool(acodec)) or (abr and abr > 0) or (asr and asr > 0) or (f.get("audio_ext") and f.get("audio_ext") != "none") or ("audio" in note.lower())
 
             # 1. Luồng Video riêng (Video-only)
             if has_v and not has_a:
@@ -106,7 +112,7 @@ class FormatPickerDialog(ctk.CTkToplevel):
                     res_str += f" ({fps}fps)"
                 
                 size_str = self._format_size(filesize, vbr or tbr)
-                codec_clean = self._clean_codec_name(vcodec)
+                codec_clean = self._clean_codec_name(vcodec if vcodec != "none" else (f.get("video_ext") or "Video"))
                 bitrate_str = f"{int(vbr or tbr)} kbps" if (vbr or tbr) else "--"
 
                 self.video_streams.append({
@@ -125,7 +131,7 @@ class FormatPickerDialog(ctk.CTkToplevel):
 
             # 2. Luồng Audio riêng (Audio-only)
             elif has_a and not has_v:
-                codec_clean = self._clean_codec_name(acodec)
+                codec_clean = self._clean_codec_name(acodec if acodec != "none" else (f.get("audio_ext") or "Audio"))
                 bitrate_str = f"{int(abr or tbr)} kbps" if (abr or tbr) else "--"
                 size_str = self._format_size(filesize, abr or tbr)
                 asr_str = f"{asr//1000} kHz" if asr else "--"

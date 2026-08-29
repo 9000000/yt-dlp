@@ -291,17 +291,12 @@ class DownloadTask:
                 pass
 
         # Tích hợp YouTube Botguard / PO Token Provider
-        if ("youtube.com" in self.url.lower() or "youtu.be" in self.url.lower()) and self.pot_enabled:
-            extractor_args = {
-                'youtube': {
-                    'player_client': ['web', 'android', 'ios']
-                }
-            }
-            if self.pot_provider_url and self.pot_provider_url.startswith("http"):
-                extractor_args['youtubepot-bgutil'] = {
+        if ("youtube.com" in self.url.lower() or "youtu.be" in self.url.lower()) and self.pot_enabled and self.pot_provider_url and self.pot_provider_url.startswith("http"):
+            base_opts['extractor_args'] = {
+                'youtubepot-bgutil': {
                     'provider_url': [self.pot_provider_url]
                 }
-            base_opts['extractor_args'] = extractor_args
+            }
 
         if ffmpeg_path:
             base_opts['ffmpeg_location'] = ffmpeg_path

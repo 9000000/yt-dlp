@@ -169,18 +169,13 @@ class URLDetector:
             if dns_servers:
                 base_opts['dns_servers'] = dns_servers
 
-            # Tích hợp YouTube Botguard / PO Token Provider & Multi-client fallback
-            if ("youtube.com" in url.lower() or "youtu.be" in url.lower()) and pot_enabled:
-                extractor_args = {
-                    'youtube': {
-                        'player_client': ['web', 'android', 'ios']
-                    }
-                }
-                if pot_provider_url and pot_provider_url.startswith("http"):
-                    extractor_args['youtubepot-bgutil'] = {
+            # Tích hợp YouTube Botguard / PO Token Provider nếu có cấu hình provider URL
+            if ("youtube.com" in url.lower() or "youtu.be" in url.lower()) and pot_enabled and pot_provider_url and pot_provider_url.startswith("http"):
+                base_opts['extractor_args'] = {
+                    'youtubepot-bgutil': {
                         'base_url': [pot_provider_url]
                     }
-                base_opts['extractor_args'] = extractor_args
+                }
 
             info = None
             last_err = ""
