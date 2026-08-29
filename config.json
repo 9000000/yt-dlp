@@ -1,0 +1,13 @@
+{
+    "download_dir": "C:\\Users\\NongTuan\\Downloads\\ToolDL_Videos",
+    "theme": "dark",
+    "auto_detect_clipboard": false,
+    "auto_check_updates": true,
+    "default_quality": "Tốt nhất (Best)",
+    "default_format": "MP4",
+    "default_audio_format": "MP3 (320kbps)",
+    "embed_subtitles": true,
+    "sub_lang": "vi,en",
+    "browser_cookie": "chrome",
+    "max_concurrent_downloads": 3
+}
