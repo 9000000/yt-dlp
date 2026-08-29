@@ -484,49 +484,84 @@ class DownloadView(ctk.CTkFrame):
         self.search_count_lbl.configure(text=f"Tìm thấy: {len(results)} video")
 
         for item in results:
-            card = ctk.CTkFrame(self.search_scroll, corner_radius=6, fg_color=("#F1F5F9", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
-            card.pack(fill="x", pady=2, padx=2)
+            card = ctk.CTkFrame(self.search_scroll, corner_radius=8, fg_color=("#F1F5F9", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
+            card.pack(fill="x", pady=4, padx=2)
 
             c_box = ctk.CTkFrame(card, fg_color="transparent")
-            c_box.pack(fill="x", padx=8, pady=4)
+            c_box.pack(fill="x", padx=10, pady=8)
 
+            # Checkbox chọn
             chk_var = ctk.BooleanVar(value=True)
             chk = ctk.CTkCheckBox(c_box, text="", variable=chk_var, width=22)
-            chk.pack(side="left", padx=(0, 8))
+            chk.pack(side="left", padx=(0, 10))
 
+            # Khung Ảnh Thumbnail Video (110x62)
+            thumb_lbl = ctk.CTkLabel(
+                c_box,
+                text="🖼️",
+                width=110,
+                height=62,
+                corner_radius=6,
+                fg_color=("#E2E8F0", "#0F172A"),
+                font=("Segoe UI", 10)
+            )
+            thumb_lbl.pack(side="left", padx=(0, 12))
+
+            # Tải ảnh thumbnail bất đồng bộ qua luồng phụ để không bị đơ GUI
+            thumb_url = item.get("thumbnail_url")
+            if thumb_url:
+                threading.Thread(target=self._async_load_thumb, args=(thumb_url, thumb_lbl), daemon=True).start()
+
+            # Khung thông tin chi tiết
             info_col = ctk.CTkFrame(c_box, fg_color="transparent")
             info_col.pack(side="left", fill="both", expand=True)
 
             t_row = ctk.CTkFrame(info_col, fg_color="transparent")
-            t_row.pack(fill="x", pady=(0, 1))
+            t_row.pack(fill="x", pady=(0, 2))
 
             plat = item.get("platform", "Đa nền tảng")
             badge_colors = {"YouTube": "#EF4444", "TikTok": "#111827", "Facebook": "#2563EB", "Instagram": "#E11D48", "Bilibili": "#00A1D6"}
-            plat_badge = ctk.CTkLabel(t_row, text=plat, fg_color=badge_colors.get(plat, "#64748B"), text_color="white", corner_radius=3, font=("Segoe UI", 8, "bold"), width=60, height=16)
+            plat_badge = ctk.CTkLabel(t_row, text=plat, fg_color=badge_colors.get(plat, "#64748B"), text_color="white", corner_radius=4, font=("Segoe UI", 9, "bold"), width=65, height=18)
             plat_badge.pack(side="left", padx=(0, 6))
 
             t_text = item.get("title", item.get("url"))
-            lbl_t = ctk.CTkLabel(t_row, text=t_text[:75] + "..." if len(t_text) > 75 else t_text, font=("Segoe UI", 10, "bold"), anchor="w")
+            lbl_t = ctk.CTkLabel(t_row, text=t_text[:85] + "..." if len(t_text) > 85 else t_text, font=("Segoe UI", 11, "bold"), anchor="w")
             lbl_t.pack(side="left", fill="x", expand=True)
 
             sub_r = ctk.CTkFrame(info_col, fg_color="transparent")
-            sub_r.pack(fill="x")
+            sub_r.pack(fill="x", pady=(0, 2))
 
-            u_info = f"👤 {item.get('uploader')}" if item.get('uploader') and item.get('uploader') != '--' else f"🔗 {item.get('url')}"
-            u_lbl = ctk.CTkLabel(sub_r, text=u_info[:55], font=("Segoe UI", 9), text_color=("#64748B", "#94A3B8"), anchor="w")
-            u_lbl.pack(side="left", fill="x", expand=True)
+            u_info = f"👤 {item.get('uploader')}" if item.get('uploader') and item.get('uploader') != '--' else ""
+            if u_info:
+                u_lbl = ctk.CTkLabel(sub_r, text=u_info[:40], font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"), anchor="w")
+                u_lbl.pack(side="left", padx=(0, 10))
 
-            dur_lbl = ctk.CTkLabel(sub_r, text=f"⏱️ {item.get('duration_str', '--:--')}", font=("Segoe UI", 9), text_color=("#64748B", "#94A3B8"))
-            dur_lbl.pack(side="right", padx=(8, 0))
+            dur_lbl = ctk.CTkLabel(sub_r, text=f"⏱️ Thời lượng: {item.get('duration_str', '--:--')}", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"))
+            dur_lbl.pack(side="left")
 
-            dl_btn = ctk.CTkButton(c_box, text="📥 Tải Đơn", width=75, height=26, command=lambda u=item["url"]: self.load_single_url_and_analyze(u), fg_color="#3B82F6", hover_color="#2563EB", font=("Segoe UI", 9, "bold"))
-            dl_btn.pack(side="right", padx=(6, 0))
+            url_row = ctk.CTkFrame(info_col, fg_color="transparent")
+            url_row.pack(fill="x")
+            url_lbl = ctk.CTkLabel(url_row, text=f"🔗 {item.get('url')}", font=("Segoe UI", 9), text_color=("#475569", "#94A3B8"), anchor="w")
+            url_lbl.pack(side="left", fill="x", expand=True)
+
+            dl_btn = ctk.CTkButton(c_box, text="📥 Tải Đơn", width=80, height=32, command=lambda u=item["url"]: self.load_single_url_and_analyze(u), fg_color="#3B82F6", hover_color="#2563EB", font=("Segoe UI", 10, "bold"))
+            dl_btn.pack(side="right", padx=(8, 0))
 
             self.search_results.append({
                 "data": item,
                 "chk_var": chk_var,
                 "frame": card
             })
+
+    def _async_load_thumb(self, url: str, target_lbl: ctk.CTkLabel):
+        """Tải ảnh thumbnail bất đồng bộ và gán vào nhãn hiển thị."""
+        try:
+            img = URLDetector.load_thumbnail_image(url, size=(110, 62))
+            if img:
+                ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=(110, 62))
+                self.after(0, lambda: target_lbl.configure(image=ctk_img, text=""))
+        except Exception:
+            pass
 
     def search_select_all(self):
         for item in self.search_results:

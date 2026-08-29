@@ -1,7 +1,7 @@
 """
 Màn hình Trình Duyệt Web & Bộ Quét Video Trên Trang (Browser & Web Scanner View).
 Tích hợp duyệt web qua Edge WebView2, quét trích xuất toàn bộ video/reels/shorts trên bất kỳ trang web nào
-và chọn lọc để tải hàng loạt 100% Tiếng Việt.
+kèm Thumbnail sắc nét và chọn lọc để tải hàng loạt 100% Tiếng Việt.
 """
 
 import os
@@ -27,9 +27,8 @@ class BrowserView(ctk.CTkFrame):
         self.on_download_batch = on_download_batch
         self.log_callback = log_callback
 
-        self.scanned_items = []  # List of {data, chk_var, card}
+        self.scanned_items = []
         self.is_scanning = False
-        self.browser_window = None
 
         self.setup_ui()
 
@@ -42,7 +41,7 @@ class BrowserView(ctk.CTkFrame):
         main_container.pack(fill="both", expand=True, padx=15, pady=12)
 
         # =========================================================================
-        # 1. THANH ĐỊA CHỈ & NÚT ĐIỀU HƯỚNG TRÌNH DUYỆT (ADDRESS & ACTION BAR)
+        # 1. THANH ĐỊA CHỈ & NÚT ĐIỀU HƯỚNG TRÌNH DUYỆT
         # =========================================================================
         nav_card = ctk.CTkFrame(main_container, corner_radius=10)
         nav_card.pack(fill="x", pady=(0, 10))
@@ -50,7 +49,6 @@ class BrowserView(ctk.CTkFrame):
         nav_inner = ctk.CTkFrame(nav_card, fg_color="transparent")
         nav_inner.pack(fill="x", padx=12, pady=10)
 
-        # Nút điều hướng nhanh
         ctk.CTkButton(nav_inner, text="🏠", width=34, height=34, command=lambda: self.navigate_to("https://www.youtube.com"), font=("Segoe UI", 12)).pack(side="left", padx=(0, 6))
 
         self.url_entry = ctk.CTkEntry(
@@ -88,7 +86,7 @@ class BrowserView(ctk.CTkFrame):
         self.open_browser_btn.pack(side="right")
 
         # =========================================================================
-        # 2. THANH DẤU TRANG TRUY CẬP NHANH (BOOKMARK CHIPS)
+        # 2. THANH DẤU TRANG TRUY CẬP NHANH
         # =========================================================================
         bm_bar = ctk.CTkFrame(main_container, fg_color="transparent")
         bm_bar.pack(fill="x", pady=(0, 10))
@@ -116,7 +114,7 @@ class BrowserView(ctk.CTkFrame):
             btn.pack(side="left", padx=(0, 6))
 
         # =========================================================================
-        # 3. KHUNG ĐIỀU KHIỂN CHỌN TẢI HÀNG LOẠT (SELECTION ACTION BAR)
+        # 3. KHUNG ĐIỀU KHIỂN CHỌN TẢI HÀNG LOẠT
         # =========================================================================
         ctrl_card = ctk.CTkFrame(main_container, corner_radius=8, fg_color=("#E2E8F0", "#1E293B"), height=36)
         ctrl_card.pack(fill="x", pady=(0, 10))
@@ -201,14 +199,30 @@ class BrowserView(ctk.CTkFrame):
 
         for item in items:
             card = ctk.CTkFrame(self.list_scroll, corner_radius=8, fg_color=("#F1F5F9", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
-            card.pack(fill="x", pady=3, padx=2)
+            card.pack(fill="x", pady=4, padx=2)
 
             c_box = ctk.CTkFrame(card, fg_color="transparent")
-            c_box.pack(fill="x", padx=10, pady=6)
+            c_box.pack(fill="x", padx=10, pady=8)
 
             chk_var = ctk.BooleanVar(value=True)
-            chk = ctk.CTkCheckBox(c_box, text="", variable=chk_var, width=24)
+            chk = ctk.CTkCheckBox(c_box, text="", variable=chk_var, width=22)
             chk.pack(side="left", padx=(0, 10))
+
+            # Khung Ảnh Thumbnail Video (110x62)
+            thumb_lbl = ctk.CTkLabel(
+                c_box,
+                text="🖼️",
+                width=110,
+                height=62,
+                corner_radius=6,
+                fg_color=("#E2E8F0", "#0F172A"),
+                font=("Segoe UI", 10)
+            )
+            thumb_lbl.pack(side="left", padx=(0, 12))
+
+            thumb_url = item.get("thumbnail_url")
+            if thumb_url:
+                threading.Thread(target=self._async_load_thumb, args=(thumb_url, thumb_lbl), daemon=True).start()
 
             info_col = ctk.CTkFrame(c_box, fg_color="transparent")
             info_col.pack(side="left", fill="both", expand=True)
@@ -233,26 +247,33 @@ class BrowserView(ctk.CTkFrame):
             t_text = item.get("title", item.get("url"))
             lbl_title = ctk.CTkLabel(
                 title_row,
-                text=t_text[:75] + "..." if len(t_text) > 75 else t_text,
+                text=t_text[:85] + "..." if len(t_text) > 85 else t_text,
                 font=("Segoe UI", 11, "bold"),
                 anchor="w"
             )
             lbl_title.pack(side="left", fill="x", expand=True)
 
             sub_row = ctk.CTkFrame(info_col, fg_color="transparent")
-            sub_row.pack(fill="x")
+            sub_row.pack(fill="x", pady=(0, 2))
 
-            u_lbl = ctk.CTkLabel(sub_row, text=f"🔗 {item.get('url')}", font=("Segoe UI", 9), text_color=("#64748B", "#94A3B8"), anchor="w")
-            u_lbl.pack(side="left", fill="x", expand=True)
+            u_info = f"👤 {item.get('uploader')}" if item.get('uploader') and item.get('uploader') != '--' else ""
+            if u_info:
+                u_lbl = ctk.CTkLabel(sub_row, text=u_info[:40], font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"), anchor="w")
+                u_lbl.pack(side="left", padx=(0, 10))
 
-            dur_lbl = ctk.CTkLabel(sub_row, text=f"⏱️ {item.get('duration_str', '--:--')}", font=("Segoe UI", 9), text_color=("#64748B", "#94A3B8"))
-            dur_lbl.pack(side="right", padx=(10, 0))
+            dur_lbl = ctk.CTkLabel(sub_row, text=f"⏱️ {item.get('duration_str', '--:--')}", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"))
+            dur_lbl.pack(side="left")
+
+            url_row = ctk.CTkFrame(info_col, fg_color="transparent")
+            url_row.pack(fill="x")
+            url_lbl = ctk.CTkLabel(url_row, text=f"🔗 {item.get('url')}", font=("Segoe UI", 9), text_color=("#475569", "#94A3B8"), anchor="w")
+            url_lbl.pack(side="left", fill="x", expand=True)
 
             dl_btn = ctk.CTkButton(
                 c_box,
                 text="📥 Tải Ngay",
                 width=80,
-                height=28,
+                height=32,
                 command=lambda u=item["url"]: self.on_single_download_clicked(u),
                 fg_color="#3B82F6",
                 hover_color="#2563EB",
@@ -265,6 +286,15 @@ class BrowserView(ctk.CTkFrame):
                 "chk_var": chk_var,
                 "frame": card
             })
+
+    def _async_load_thumb(self, url: str, target_lbl: ctk.CTkLabel):
+        try:
+            img = URLDetector.load_thumbnail_image(url, size=(110, 62))
+            if img:
+                ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=(110, 62))
+                self.after(0, lambda: target_lbl.configure(image=ctk_img, text=""))
+        except Exception:
+            pass
 
     def select_all(self):
         for item in self.scanned_items:

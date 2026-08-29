@@ -1,7 +1,7 @@
 """
 Module Quét & Trích Xuất Toàn Bộ Video Trên Trang Web (Page Video Scanner).
 Hỗ trợ quét trang web bất kỳ (kênh YouTube, playlist, trang tin tức, blog, Facebook, TikTok) 
-để tìm ra toàn bộ video có trên trang phục vụ tải hàng loạt.
+để tìm ra toàn bộ video có trên trang kèm đầy đủ Tiêu đề, Tác giả, Thời lượng và Ảnh Thumbnail xem trước.
 """
 
 import re
@@ -22,8 +22,8 @@ class PageVideoScanner:
     @staticmethod
     def scan_webpage_for_videos(page_url: str, cookie_browser: str = "none", cookie_file: str = "") -> tuple[bool, list, str]:
         """
-        Quét URL trang web và trả về danh sách tất cả các video tìm thấy.
-        Mỗi item: {url, title, platform, duration_str, thumbnail_url}
+        Quét URL trang web và trả về danh sách tất cả các video tìm thấy kèm Thumbnail.
+        Mỗi item: {url, title, uploader, platform, duration_str, thumbnail_url}
         """
         if not URLDetector.is_valid_url(page_url):
             return False, [], "Đường dẫn trang web không hợp lệ."
@@ -58,8 +58,8 @@ class PageVideoScanner:
                                 if not entry:
                                     continue
                                 v_url = entry.get('url') or entry.get('webpage_url')
+                                v_id = entry.get('id')
                                 if not v_url:
-                                    v_id = entry.get('id')
                                     if v_id and 'youtube' in page_url:
                                         v_url = f"https://www.youtube.com/watch?v={v_id}"
                                     else:
@@ -69,34 +69,46 @@ class PageVideoScanner:
                                     seen_urls.add(v_url)
                                     dur = entry.get('duration')
                                     dur_str = URLDetector.format_duration(dur) if dur else "--:--"
+                                    
+                                    # Lấy thumbnail
+                                    thumbs = entry.get('thumbnails') or []
+                                    thumb_url = entry.get('thumbnail') or (thumbs[-1].get('url') if thumbs else "")
+                                    if not thumb_url and v_id:
+                                        thumb_url = f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg"
+
                                     results.append({
                                         "url": v_url,
                                         "title": entry.get('title') or "Video không tiêu đề",
                                         "uploader": entry.get('uploader') or entry.get('channel') or "--",
                                         "platform": URLDetector.detect_platform(v_url),
                                         "duration_str": dur_str,
-                                        "thumbnail_url": entry.get('thumbnail') or ""
+                                        "thumbnail_url": thumb_url
                                     })
 
                         elif info.get('url') or info.get('webpage_url'):
-                            # Nếu chỉ là 1 video đơn
                             single_url = info.get('webpage_url') or info.get('url') or page_url
+                            v_id = info.get('id')
                             if single_url not in seen_urls:
                                 seen_urls.add(single_url)
                                 dur = info.get('duration')
+                                thumbs = info.get('thumbnails') or []
+                                thumb_url = info.get('thumbnail') or (thumbs[-1].get('url') if thumbs else "")
+                                if not thumb_url and v_id:
+                                    thumb_url = f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg"
+
                                 results.append({
                                     "url": single_url,
                                     "title": info.get('title') or "Video đơn",
                                     "uploader": info.get('uploader') or "--",
                                     "platform": URLDetector.detect_platform(single_url),
                                     "duration_str": URLDetector.format_duration(dur) if dur else "--:--",
-                                    "thumbnail_url": info.get('thumbnail') or ""
+                                    "thumbnail_url": thumb_url
                                 })
 
             except Exception:
                 pass
 
-        # 2. Nếu yt-dlp không tìm thấy hoặc trang là website tin tức/blog thường -> Quét HTML DOM qua BeautifulSoup
+        # 2. Quét HTML DOM qua BeautifulSoup nếu ít kết quả
         if len(results) < 2:
             try:
                 headers = {
@@ -107,18 +119,27 @@ class PageVideoScanner:
                 if resp.status_code == 200:
                     soup = BeautifulSoup(resp.text, "html.parser")
 
+                    # Tìm ảnh đại diện trang nếu có
+                    page_thumb = ""
+                    og_img = soup.find("meta", property="og:image") or soup.find("meta", attrs={"name": "og:image"})
+                    if og_img and og_img.get("content"):
+                        page_thumb = og_img["content"]
+
                     # Tìm các thẻ a href
                     for a in soup.find_all("a", href=True):
                         href = a["href"]
                         full_url = urllib.parse.urljoin(page_url, href)
 
-                        # Kiểm tra xem link có phải là video link không
                         if URLDetector.is_valid_url(full_url) and full_url not in seen_urls:
                             plat = URLDetector.detect_platform(full_url)
                             is_video_link = False
+                            v_thumb = page_thumb
 
                             if "youtube.com/watch" in full_url or "youtu.be/" in full_url or "youtube.com/shorts/" in full_url:
                                 is_video_link = True
+                                match = re.search(r"(?:v=|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})", full_url)
+                                if match:
+                                    v_thumb = f"https://i.ytimg.com/vi/{match.group(1)}/hqdefault.jpg"
                             elif "tiktok.com/@" in full_url and "/video/" in full_url:
                                 is_video_link = True
                             elif "facebook.com/" in full_url and ("/videos/" in full_url or "/reel/" in full_url or "/watch/" in full_url):
@@ -131,13 +152,19 @@ class PageVideoScanner:
                             if is_video_link:
                                 seen_urls.add(full_url)
                                 link_text = a.get_text().strip() or a.get("title") or "Video tìm thấy trên trang"
+                                
+                                # Tìm ảnh thumbnail con trong thẻ a nếu có
+                                img_child = a.find("img")
+                                if img_child and img_child.get("src"):
+                                    v_thumb = urllib.parse.urljoin(page_url, img_child["src"])
+
                                 results.append({
                                     "url": full_url,
                                     "title": link_text[:80],
                                     "uploader": "--",
                                     "platform": plat,
                                     "duration_str": "--:--",
-                                    "thumbnail_url": ""
+                                    "thumbnail_url": v_thumb
                                 })
 
                     # Tìm các thẻ iframe embed
@@ -146,13 +173,18 @@ class PageVideoScanner:
                         full_src = urllib.parse.urljoin(page_url, src)
                         if ("youtube.com/embed/" in full_src or "player.vimeo.com" in full_src or "facebook.com/plugins/video" in full_src) and full_src not in seen_urls:
                             seen_urls.add(full_src)
+                            v_thumb = page_thumb
+                            match = re.search(r"youtube\.com\/embed\/([a-zA-Z0-9_-]{11})", full_src)
+                            if match:
+                                v_thumb = f"https://i.ytimg.com/vi/{match.group(1)}/hqdefault.jpg"
+
                             results.append({
                                 "url": full_src,
                                 "title": iframe.get("title") or "Video Iframe nhúng",
                                 "uploader": "--",
                                 "platform": URLDetector.detect_platform(full_src),
                                 "duration_str": "--:--",
-                                "thumbnail_url": ""
+                                "thumbnail_url": v_thumb
                             })
 
             except Exception:
@@ -201,6 +233,8 @@ class PageVideoScanner:
                         dur_str = URLDetector.format_duration(dur) if dur else "--:--"
                         thumbs = entry.get('thumbnails') or []
                         thumb_url = entry.get('thumbnail') or (thumbs[-1].get('url') if thumbs else "")
+                        if not thumb_url and v_id:
+                            thumb_url = f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg"
 
                         results.append({
                             "url": v_url,
