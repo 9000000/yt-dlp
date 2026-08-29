@@ -62,6 +62,8 @@ def run_pyinstaller():
         "--hidden-import=tool_gui.downloader",
         "--hidden-import=tool_gui.url_detector",
         "--hidden-import=tool_gui.page_scanner",
+        "--hidden-import=tool_gui.embedded_browser",
+        "--hidden-import=tool_gui.browser_launcher",
         "--hidden-import=tool_gui.config",
         "--hidden-import=tool_gui.views",
         "--hidden-import=tool_gui.views.activation_view",

@@ -1,6 +1,6 @@
 """
 Điểm khởi chạy ứng dụng ToolDL (Main Entry Point).
-Khởi động giao diện người dùng đồ họa (GUI) hoặc Trình duyệt Web độc lập.
+Khởi động giao diện người dùng đồ họa (GUI) hoặc Trình duyệt Web nhúng/độc lập.
 """
 
 import sys
@@ -19,6 +19,16 @@ if sys.platform == "win32":
         sys.stderr.reconfigure(encoding='utf-8')
     except Exception:
         pass
+
+# Kiểm tra nếu chạy chế độ Trình duyệt nhúng trực tiếp vào HWND của GUI
+if len(sys.argv) > 1 and sys.argv[1] == "--embedded-browser":
+    from tool_gui.embedded_browser import run_embedded_webview
+    p_hwnd = int(sys.argv[2]) if len(sys.argv) > 2 else 0
+    init_url = sys.argv[3] if len(sys.argv) > 3 else "https://www.youtube.com"
+    w = int(sys.argv[4]) if len(sys.argv) > 4 else 800
+    h = int(sys.argv[5]) if len(sys.argv) > 5 else 500
+    run_embedded_webview(p_hwnd, init_url, w, h)
+    sys.exit(0)
 
 # Kiểm tra nếu chạy chế độ Trình duyệt độc lập
 if len(sys.argv) > 1 and sys.argv[1] == "--browser":
