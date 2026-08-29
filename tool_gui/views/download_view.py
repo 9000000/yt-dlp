@@ -308,30 +308,80 @@ class DownloadView(ctk.CTkFrame):
         ctk.CTkLabel(grid_c, text="Độ phân giải tối đa:", font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w")
         ctk.CTkLabel(grid_c, text="Định dạng Video Container:", font=("Segoe UI", 10)).grid(row=0, column=1, sticky="w", padx=(4, 0))
 
-        self.quality_combo = ctk.CTkComboBox(grid_c, values=["🌟 Tốt nhất có thể (Gốc)", "🎬 8K Ultra HD (4320p)", "🎬 4K Ultra HD (2160p)", "📺 2K Quad HD (1440p)", "📺 Full HD 1080p (60fps)", "📺 Full HD 1080p", "📱 HD 720p (60fps)", "📱 HD 720p", "📱 SD 480p", "⚡ Thấp 360p", "⚡ 240p/144p"], height=28)
+        self.quality_combo = ctk.CTkComboBox(grid_c, values=[
+            "🌟 Tốt nhất có thể (Gốc)",
+            "🎬 8K Ultra HD (4320p)",
+            "🎬 4K Ultra HD (2160p)",
+            "📺 2K Quad HD (1440p)",
+            "📺 Full HD 1080p (60fps)",
+            "📺 Full HD 1080p",
+            "📱 HD 720p (60fps)",
+            "📱 HD 720p",
+            "📱 SD 480p",
+            "⚡ Thấp 360p",
+            "⚡ 240p",
+            "⚡ 144p"
+        ], height=28)
         self.quality_combo.set("🌟 Tốt nhất có thể (Gốc)")
         self.quality_combo.grid(row=1, column=0, sticky="ew", padx=(0, 2), pady=(0, 4))
 
-        self.fmt_combo = ctk.CTkComboBox(grid_c, values=["MP4 (Khuyên dùng)", "MKV (Chất lượng gốc)", "WEBM", "MOV", "AVI", "TS"], height=28)
-        self.fmt_combo.set("MP4 (Khuyên dùng)")
+        self.fmt_combo = ctk.CTkComboBox(grid_c, values=[
+            "MP4 (Khuyên dùng - Chuẩn quốc tế)",
+            "MKV (Matroska - Hỗ trợ đa luồng)",
+            "WEBM (Google WebM)",
+            "MOV (Apple QuickTime)",
+            "AVI (Audio Video Interleave)",
+            "TS (Transport Stream)",
+            "FLV (Flash Video)",
+            "3GP (Di động cổ điển)",
+            "OGV (Ogg Video)",
+            "WMV (Windows Media)"
+        ], height=28)
+        self.fmt_combo.set("MP4 (Khuyên dùng - Chuẩn quốc tế)")
         self.fmt_combo.grid(row=1, column=1, sticky="ew", padx=(2, 0), pady=(0, 4))
 
         ctk.CTkLabel(grid_c, text="Bộ mã hóa Video (Codec):", font=("Segoe UI", 10)).grid(row=2, column=0, sticky="w")
         ctk.CTkLabel(grid_c, text="Tùy chọn Khung hình (FPS):", font=("Segoe UI", 10)).grid(row=2, column=1, sticky="w", padx=(4, 0))
 
-        self.codec_combo = ctk.CTkComboBox(grid_c, values=["Tự động (Tối ưu)", "H.264 / AVC1 (Tương thích)", "H.265 / HEVC (Siêu nén)", "VP9", "AV1"], height=28)
-        self.codec_combo.set("Tự động (Tối ưu)")
+        self.codec_combo = ctk.CTkComboBox(grid_c, values=[
+            "Tự động (Tối ưu theo nguồn gốc)",
+            "H.264 / AVC1 (Tương thích cao nhất)",
+            "H.265 / HEVC (Siêu nén chất lượng cao)",
+            "VP9 (Google 4K sắc nét)",
+            "AV1 (Codec thế hệ mới)",
+            "ProRes (Chất lượng dựng phim)",
+            "MPEG-4 (Thiết bị đời cũ)"
+        ], height=28)
+        self.codec_combo.set("Tự động (Tối ưu theo nguồn gốc)")
         self.codec_combo.grid(row=3, column=0, sticky="ew", padx=(0, 2), pady=(0, 4))
 
-        self.fps_combo = ctk.CTkComboBox(grid_c, values=["60fps (Mượt mà)", "Mặc định"], height=28)
+        self.fps_combo = ctk.CTkComboBox(grid_c, values=[
+            "60fps (Mượt mà)",
+            "30fps (Tiêu chuẩn)",
+            "Mặc định (Theo video gốc)"
+        ], height=28)
         self.fps_combo.set("60fps (Mượt mà)")
         self.fps_combo.grid(row=3, column=1, sticky="ew", padx=(2, 0), pady=(0, 4))
 
         ctk.CTkLabel(grid_c, text="Bitrate & Định dạng Âm thanh:", font=("Segoe UI", 10)).grid(row=4, column=0, sticky="w")
         ctk.CTkLabel(grid_c, text="Cookie xác thực:", font=("Segoe UI", 10)).grid(row=4, column=1, sticky="w", padx=(4, 0))
 
-        self.audio_combo = ctk.CTkComboBox(grid_c, values=["MP3 - 320 kbps (Cực cao)", "MP3 - 256 kbps", "MP3 - 192 kbps", "MP3 - 128 kbps", "M4A / AAC (Gốc)", "FLAC (Lossless)", "WAV", "OPUS"], height=28)
-        self.audio_combo.set("MP3 - 320 kbps (Cực cao)")
+        self.audio_combo = ctk.CTkComboBox(grid_c, values=[
+            "MP3 - 320 kbps (Cực cao - Studio Master)",
+            "MP3 - 256 kbps (Chất lượng rất cao)",
+            "MP3 - 192 kbps (Tiêu chuẩn cao)",
+            "MP3 - 128 kbps (Tiết kiệm dung lượng)",
+            "MP3 - 96 kbps (Siêu nhẹ)",
+            "M4A / AAC (Gốc - 256 kbps)",
+            "FLAC (Lossless 24-bit)",
+            "WAV (Studio PCM 1411 kbps)",
+            "OPUS - 160 kbps (Siêu nét)",
+            "OGG / Vorbis - 192 kbps",
+            "ALAC (Apple Lossless)",
+            "WMA (Windows Media)",
+            "AIFF (Apple PCM)"
+        ], height=28)
+        self.audio_combo.set("MP3 - 320 kbps (Cực cao - Studio Master)")
         self.audio_combo.grid(row=5, column=0, sticky="ew", padx=(0, 2))
 
         self.cookie_browser_combo = ctk.CTkComboBox(grid_c, values=["Không dùng Cookie", "Google Chrome", "Microsoft Edge", "Mozilla Firefox", "Brave Browser", "Opera", "Tệp Cookie (.txt)"], height=28, command=self.on_cookie_changed)
@@ -493,7 +543,27 @@ class DownloadView(ctk.CTkFrame):
         )
         self.batch_preset_combo.pack(side="left", fill="x", expand=True, padx=(0, 4))
 
-        self.batch_fmt_combo = ctk.CTkComboBox(row_b_opt, values=["🌟 Video MP4 (Gốc)", "🎬 Video 1080p", "📱 Video 720p", "🎵 Âm thanh MP3 320k", "🎵 Âm thanh M4A"], height=26, font=("Segoe UI", 10), width=120)
+        self.batch_fmt_combo = ctk.CTkComboBox(
+            row_b_opt,
+            values=[
+                "🌟 Video MP4 (Gốc)",
+                "🎬 Video 4K (2160p)",
+                "📺 Video 1080p (Full HD)",
+                "📱 Video 720p (HD)",
+                "📱 Video 480p (SD)",
+                "📦 Video MKV (Gốc)",
+                "📦 Video WEBM",
+                "🎵 Âm thanh MP3 320k",
+                "🎵 Âm thanh MP3 192k",
+                "🎵 Âm thanh M4A / AAC",
+                "🎵 Âm thanh FLAC Lossless",
+                "🎵 Âm thanh WAV (PCM)",
+                "🎵 Âm thanh OPUS"
+            ],
+            height=26,
+            font=("Segoe UI", 9),
+            width=145
+        )
         self.batch_fmt_combo.set("🌟 Video MP4 (Gốc)")
         self.batch_fmt_combo.pack(side="right")
 

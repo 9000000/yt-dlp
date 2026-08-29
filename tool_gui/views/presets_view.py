@@ -143,19 +143,67 @@ class PresetsView(ctk.CTkFrame):
         ctk.CTkLabel(grid_l, text="Độ phân giải tối đa:", font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w")
         ctk.CTkLabel(grid_l, text="Định dạng Video Container:", font=("Segoe UI", 10)).grid(row=0, column=1, sticky="w", padx=(6, 0))
 
-        self.quality_combo = ctk.CTkComboBox(grid_l, values=["🌟 Tốt nhất có thể (Gốc)", "🎬 8K Ultra HD (4320p)", "🎬 4K Ultra HD (2160p)", "📺 2K Quad HD (1440p)", "📺 Full HD 1080p (60fps)", "📺 Full HD 1080p", "📱 HD 720p (60fps)", "📱 HD 720p", "📱 SD 480p", "⚡ Thấp 360p"], height=28)
+        self.quality_combo = ctk.CTkComboBox(grid_l, values=[
+            "🌟 Tốt nhất có thể (Gốc)",
+            "🎬 8K Ultra HD (4320p)",
+            "🎬 4K Ultra HD (2160p)",
+            "📺 2K Quad HD (1440p)",
+            "📺 Full HD 1080p (60fps)",
+            "📺 Full HD 1080p",
+            "📱 HD 720p (60fps)",
+            "📱 HD 720p",
+            "📱 SD 480p",
+            "⚡ Thấp 360p",
+            "⚡ 240p",
+            "⚡ 144p"
+        ], height=28)
         self.quality_combo.grid(row=1, column=0, sticky="ew", padx=(0, 3), pady=(0, 6))
 
-        self.fmt_combo = ctk.CTkComboBox(grid_l, values=["MP4 (Khuyên dùng)", "MKV (Chất lượng gốc)", "WEBM", "MOV", "AVI"], height=28)
+        self.fmt_combo = ctk.CTkComboBox(grid_l, values=[
+            "MP4 (Khuyên dùng - Chuẩn quốc tế)",
+            "MKV (Matroska - Hỗ trợ đa luồng)",
+            "WEBM (Google WebM)",
+            "MOV (Apple QuickTime)",
+            "AVI (Audio Video Interleave)",
+            "TS (Transport Stream)",
+            "FLV (Flash Video)",
+            "3GP (Di động cổ điển)",
+            "OGV (Ogg Video)",
+            "WMV (Windows Media)"
+        ], height=28)
         self.fmt_combo.grid(row=1, column=1, sticky="ew", padx=(3, 0), pady=(0, 6))
 
         ctk.CTkLabel(grid_l, text="Bitrate Âm thanh (Audio Codec):", font=("Segoe UI", 10)).grid(row=2, column=0, sticky="w")
         ctk.CTkLabel(grid_l, text="Định dạng Âm thanh (Audio Format):", font=("Segoe UI", 10)).grid(row=2, column=1, sticky="w", padx=(6, 0))
 
-        self.audio_combo = ctk.CTkComboBox(grid_l, values=["MP3 - 320 kbps (Cực cao)", "MP3 - 256 kbps", "MP3 - 192 kbps", "MP3 - 128 kbps", "M4A / AAC (Gốc)", "FLAC (Lossless)", "WAV", "OPUS"], height=28)
+        self.audio_combo = ctk.CTkComboBox(grid_l, values=[
+            "MP3 - 320 kbps (Cực cao - Studio Master)",
+            "MP3 - 256 kbps (Chất lượng rất cao)",
+            "MP3 - 192 kbps (Tiêu chuẩn cao)",
+            "MP3 - 128 kbps (Tiết kiệm dung lượng)",
+            "MP3 - 96 kbps (Siêu nhẹ)",
+            "M4A / AAC (Gốc - 256 kbps)",
+            "FLAC (Lossless 24-bit)",
+            "WAV (Studio PCM 1411 kbps)",
+            "OPUS - 160 kbps (Siêu nét)",
+            "OGG / Vorbis - 192 kbps",
+            "ALAC (Apple Lossless)",
+            "WMA (Windows Media)",
+            "AIFF (Apple PCM)"
+        ], height=28)
         self.audio_combo.grid(row=3, column=0, sticky="ew", padx=(0, 3))
 
-        self.audio_fmt_combo = ctk.CTkComboBox(grid_l, values=["MP3", "M4A", "FLAC", "WAV", "OPUS"], height=28)
+        self.audio_fmt_combo = ctk.CTkComboBox(grid_l, values=[
+            "MP3 (Phổ biến nhất)",
+            "M4A / AAC (Apple/YouTube)",
+            "FLAC (Lossless)",
+            "WAV (Không nén PCM)",
+            "OPUS (Hiện đại nhất)",
+            "OGG / Vorbis",
+            "ALAC (Apple Lossless)",
+            "WMA",
+            "AIFF"
+        ], height=28)
         self.audio_fmt_combo.grid(row=3, column=1, sticky="ew", padx=(3, 0))
 
         # =====================================================================
@@ -191,10 +239,18 @@ class PresetsView(ctk.CTkFrame):
         ctk.CTkLabel(grid_r2, text="Bộ mã hóa Video (Codec):", font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w")
         ctk.CTkLabel(grid_r2, text="Tùy chọn Khung hình (FPS):", font=("Segoe UI", 10)).grid(row=0, column=1, sticky="w", padx=(6, 0))
 
-        self.codec_combo = ctk.CTkComboBox(grid_r2, values=["Tự động (Tối ưu)", "H.264 / AVC1 (Tương thích cao nhất)", "H.265 / HEVC (Nén tốt)", "VP9", "AV1"], height=28)
+        self.codec_combo = ctk.CTkComboBox(grid_r2, values=[
+            "Tự động (Tối ưu theo nguồn gốc)",
+            "H.264 / AVC1 (Tương thích cao nhất)",
+            "H.265 / HEVC (Siêu nén chất lượng cao)",
+            "VP9 (Google 4K sắc nét)",
+            "AV1 (Codec thế hệ mới)",
+            "ProRes (Chất lượng dựng phim)",
+            "MPEG-4 (Thiết bị đời cũ)"
+        ], height=28)
         self.codec_combo.grid(row=1, column=0, sticky="ew", padx=(0, 3))
 
-        self.fps_combo = ctk.CTkComboBox(grid_r2, values=["60fps (Mượt mà)", "Mặc định"], height=28)
+        self.fps_combo = ctk.CTkComboBox(grid_r2, values=["60fps (Mượt mà)", "30fps (Tiêu chuẩn)", "Mặc định (Theo video gốc)"], height=28)
         self.fps_combo.grid(row=1, column=1, sticky="ew", padx=(3, 0))
 
         # Phụ đề

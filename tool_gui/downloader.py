@@ -319,7 +319,10 @@ class DownloadTask:
                 bitrate = '192'
             elif '128' in audio_text:
                 bitrate = '128'
-            elif 'm4a' in audio_text or 'aac' in audio_text:
+            elif '96' in audio_text:
+                bitrate = '96'
+
+            if 'm4a' in audio_text or 'aac' in audio_text:
                 codec = 'm4a'
             elif 'flac' in audio_text:
                 codec = 'flac'
@@ -327,6 +330,14 @@ class DownloadTask:
                 codec = 'wav'
             elif 'opus' in audio_text:
                 codec = 'opus'
+            elif 'vorbis' in audio_text or 'ogg' in audio_text:
+                codec = 'vorbis'
+            elif 'alac' in audio_text:
+                codec = 'alac'
+            elif 'wma' in audio_text:
+                codec = 'wma'
+            elif 'aiff' in audio_text:
+                codec = 'aiff'
 
             postprocessors.append({
                 'key': 'FFmpegExtractAudio',
@@ -334,9 +345,13 @@ class DownloadTask:
                 'preferredquality': bitrate,
             })
         else:
-            clean_fmt = self.output_format.replace(" (khuyên dùng)", "").replace(" (chuẩn web)", "").replace(" (chất lượng cao nhất)", "").strip()
-            if clean_fmt in ['mp4', 'mkv', 'webm', 'mov', 'avi']:
-                base_opts['merge_output_format'] = clean_fmt
+            fmt_lower = self.output_format.lower()
+            target_ext = 'mp4'
+            for ext in ['mp4', 'mkv', 'webm', 'mov', 'avi', 'ts', 'flv', '3gp', 'ogv', 'wmv']:
+                if ext in fmt_lower:
+                    target_ext = ext
+                    break
+            base_opts['merge_output_format'] = target_ext
 
         if self.add_metadata:
             postprocessors.append({'key': 'FFmpegMetadata'})
