@@ -101,31 +101,48 @@ class DownloadTask:
         self._thread.start()
 
     def _build_format_spec(self) -> str:
-        """Xây dựng chuỗi định dạng chọn chất lượng video cho yt-dlp."""
+        """Xây dựng chuỗi định dạng chọn chất lượng video và codec cho yt-dlp."""
         if self.audio_only:
             return "bestaudio/best"
 
         q = self.quality
+        height = None
         if "4320" in q or "8K" in q:
-            return "bestvideo[height<=4320]+bestaudio/best[height<=4320]/best"
+            height = 4320
         elif "2160" in q or "4K" in q:
-            return "bestvideo[height<=2160]+bestaudio/best[height<=2160]/best"
+            height = 2160
         elif "1440" in q or "2K" in q:
-            return "bestvideo[height<=1440]+bestaudio/best[height<=1440]/best"
-        elif "1080p (60fps)" in q:
-            return "bestvideo[height<=1080][fps>=50]+bestaudio/bestvideo[height<=1080]+bestaudio/best"
+            height = 1440
         elif "1080" in q or "Full HD" in q:
-            return "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best"
-        elif "720p (60fps)" in q:
-            return "bestvideo[height<=720][fps>=50]+bestaudio/bestvideo[height<=720]+bestaudio/best"
+            height = 1080
         elif "720" in q or "HD" in q:
-            return "bestvideo[height<=720]+bestaudio/best[height<=720]/best"
+            height = 720
         elif "480" in q or "SD" in q:
-            return "bestvideo[height<=480]+bestaudio/best[height<=480]/best"
+            height = 480
         elif "360" in q:
-            return "bestvideo[height<=360]+bestaudio/best[height<=360]/best"
+            height = 360
         elif "240" in q or "144" in q:
-            return "bestvideo[height<=240]+bestaudio/best[height<=240]/best"
+            height = 240
+
+        v_filter = f"[height<={height}]" if height else ""
+        if "60fps" in q or (self.fps_prefer and "60fps" in self.fps_prefer):
+            v_filter += "[fps>=50]"
+
+        codec_tag = ""
+        c = (self.video_codec or "").lower()
+        if "h.264" in c or "avc" in c:
+            codec_tag = "[vcodec^=avc1]"
+        elif "h.265" in c or "hevc" in c:
+            codec_tag = "[vcodec^=hev1]"
+        elif "vp9" in c:
+            codec_tag = "[vcodec^=vp9]"
+        elif "av1" in c:
+            codec_tag = "[vcodec^=av01]"
+
+        if codec_tag:
+            return f"bestvideo{v_filter}{codec_tag}+bestaudio/bestvideo{v_filter}+bestaudio/best{v_filter}/best"
+        elif v_filter:
+            return f"bestvideo{v_filter}+bestaudio/best{v_filter}/best"
         else:
             return "bestvideo+bestaudio/best"
 

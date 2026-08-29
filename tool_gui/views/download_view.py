@@ -305,29 +305,40 @@ class DownloadView(ctk.CTkFrame):
         grid_c.pack(fill="x", pady=(0, 4))
         grid_c.grid_columnconfigure((0, 1), weight=1)
 
-        ctk.CTkLabel(grid_c, text="Độ phân giải:", font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w")
-        ctk.CTkLabel(grid_c, text="Định dạng xuất:", font=("Segoe UI", 10)).grid(row=0, column=1, sticky="w", padx=(4, 0))
+        ctk.CTkLabel(grid_c, text="Độ phân giải tối đa:", font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w")
+        ctk.CTkLabel(grid_c, text="Định dạng Video Container:", font=("Segoe UI", 10)).grid(row=0, column=1, sticky="w", padx=(4, 0))
 
         self.quality_combo = ctk.CTkComboBox(grid_c, values=["🌟 Tốt nhất có thể (Gốc)", "🎬 8K Ultra HD (4320p)", "🎬 4K Ultra HD (2160p)", "📺 2K Quad HD (1440p)", "📺 Full HD 1080p (60fps)", "📺 Full HD 1080p", "📱 HD 720p (60fps)", "📱 HD 720p", "📱 SD 480p", "⚡ Thấp 360p", "⚡ 240p/144p"], height=28)
         self.quality_combo.set("🌟 Tốt nhất có thể (Gốc)")
         self.quality_combo.grid(row=1, column=0, sticky="ew", padx=(0, 2), pady=(0, 4))
 
-        self.fmt_combo = ctk.CTkComboBox(grid_c, values=["MP4 (Khuyên dùng)", "MKV (Chất lượng gốc)", "WEBM", "MOV", "AVI"], height=28)
+        self.fmt_combo = ctk.CTkComboBox(grid_c, values=["MP4 (Khuyên dùng)", "MKV (Chất lượng gốc)", "WEBM", "MOV", "AVI", "TS"], height=28)
         self.fmt_combo.set("MP4 (Khuyên dùng)")
         self.fmt_combo.grid(row=1, column=1, sticky="ew", padx=(2, 0), pady=(0, 4))
 
-        ctk.CTkLabel(grid_c, text="Bitrate Âm thanh:", font=("Segoe UI", 10)).grid(row=2, column=0, sticky="w")
-        ctk.CTkLabel(grid_c, text="Cookie xác thực:", font=("Segoe UI", 10)).grid(row=2, column=1, sticky="w", padx=(4, 0))
+        ctk.CTkLabel(grid_c, text="Bộ mã hóa Video (Codec):", font=("Segoe UI", 10)).grid(row=2, column=0, sticky="w")
+        ctk.CTkLabel(grid_c, text="Tùy chọn Khung hình (FPS):", font=("Segoe UI", 10)).grid(row=2, column=1, sticky="w", padx=(4, 0))
 
-        self.audio_combo = ctk.CTkComboBox(grid_c, values=["MP3 - 320 kbps (Cực cao)", "MP3 - 256 kbps", "MP3 - 192 kbps", "MP3 - 128 kbps", "M4A / AAC (Gốc)", "FLAC", "WAV", "OPUS"], height=28)
+        self.codec_combo = ctk.CTkComboBox(grid_c, values=["Tự động (Tối ưu)", "H.264 / AVC1 (Tương thích)", "H.265 / HEVC (Siêu nén)", "VP9", "AV1"], height=28)
+        self.codec_combo.set("Tự động (Tối ưu)")
+        self.codec_combo.grid(row=3, column=0, sticky="ew", padx=(0, 2), pady=(0, 4))
+
+        self.fps_combo = ctk.CTkComboBox(grid_c, values=["60fps (Mượt mà)", "Mặc định"], height=28)
+        self.fps_combo.set("60fps (Mượt mà)")
+        self.fps_combo.grid(row=3, column=1, sticky="ew", padx=(2, 0), pady=(0, 4))
+
+        ctk.CTkLabel(grid_c, text="Bitrate & Định dạng Âm thanh:", font=("Segoe UI", 10)).grid(row=4, column=0, sticky="w")
+        ctk.CTkLabel(grid_c, text="Cookie xác thực:", font=("Segoe UI", 10)).grid(row=4, column=1, sticky="w", padx=(4, 0))
+
+        self.audio_combo = ctk.CTkComboBox(grid_c, values=["MP3 - 320 kbps (Cực cao)", "MP3 - 256 kbps", "MP3 - 192 kbps", "MP3 - 128 kbps", "M4A / AAC (Gốc)", "FLAC (Lossless)", "WAV", "OPUS"], height=28)
         self.audio_combo.set("MP3 - 320 kbps (Cực cao)")
-        self.audio_combo.grid(row=3, column=0, sticky="ew", padx=(0, 2))
+        self.audio_combo.grid(row=5, column=0, sticky="ew", padx=(0, 2))
 
         self.cookie_browser_combo = ctk.CTkComboBox(grid_c, values=["Không dùng Cookie", "Google Chrome", "Microsoft Edge", "Mozilla Firefox", "Brave Browser", "Opera", "Tệp Cookie (.txt)"], height=28, command=self.on_cookie_changed)
         saved_b = self.config_manager.get("browser_cookie", "none")
         c_map = {"none": "Không dùng Cookie", "chrome": "Google Chrome", "edge": "Microsoft Edge", "firefox": "Mozilla Firefox", "brave": "Brave Browser", "opera": "Opera", "file": "Tệp Cookie (.txt)"}
         self.cookie_browser_combo.set(c_map.get(saved_b, "Không dùng Cookie"))
-        self.cookie_browser_combo.grid(row=3, column=1, sticky="ew", padx=(2, 0))
+        self.cookie_browser_combo.grid(row=5, column=1, sticky="ew", padx=(2, 0))
 
         chk_line = ctk.CTkFrame(opt_inner, fg_color="transparent")
         chk_line.pack(fill="x", pady=(4, 2))
@@ -340,7 +351,10 @@ class DownloadView(ctk.CTkFrame):
         self.meta_check.pack(side="left", padx=(0, 6))
 
         self.sub_check = ctk.CTkCheckBox(chk_line, text="Nhúng Phụ đề", font=("Segoe UI", 9))
-        self.sub_check.pack(side="left")
+        self.sub_check.pack(side="left", padx=(0, 6))
+
+        self.split_chap_check = ctk.CTkCheckBox(chk_line, text="Tách Chapter", font=("Segoe UI", 9))
+        self.split_chap_check.pack(side="left")
 
         dir_line = ctk.CTkFrame(opt_inner, fg_color="transparent")
         dir_line.pack(fill="x", pady=(2, 0))
@@ -747,12 +761,20 @@ class DownloadView(ctk.CTkFrame):
             self.mode_var.set("audio")
             self.quality_combo.configure(state="disabled")
             self.fmt_combo.configure(state="disabled")
+            if hasattr(self, 'codec_combo'):
+                self.codec_combo.configure(state="disabled")
+            if hasattr(self, 'fps_combo'):
+                self.fps_combo.configure(state="disabled")
             self.audio_combo.configure(state="normal")
             self.sub_check.configure(state="disabled")
         else:
             self.mode_var.set("video")
             self.quality_combo.configure(state="normal")
             self.fmt_combo.configure(state="normal")
+            if hasattr(self, 'codec_combo'):
+                self.codec_combo.configure(state="normal")
+            if hasattr(self, 'fps_combo'):
+                self.fps_combo.configure(state="normal")
             self.audio_combo.configure(state="normal")
             self.sub_check.configure(state="normal")
 
@@ -799,6 +821,10 @@ class DownloadView(ctk.CTkFrame):
             self.quality_combo.set(p["quality"])
         if p.get("format"):
             self.fmt_combo.set(p["format"])
+        if p.get("video_codec") and hasattr(self, 'codec_combo'):
+            self.codec_combo.set(p["video_codec"])
+        if p.get("fps_prefer") and hasattr(self, 'fps_combo'):
+            self.fps_combo.set(p["fps_prefer"])
         if p.get("audio_codec"):
             self.audio_combo.set(p["audio_codec"])
 
@@ -816,6 +842,12 @@ class DownloadView(ctk.CTkFrame):
             self.sub_check.select()
         else:
             self.sub_check.deselect()
+
+        if hasattr(self, 'split_chap_check'):
+            if p.get("split_chapters", False):
+                self.split_chap_check.select()
+            else:
+                self.split_chap_check.deselect()
 
         self.log(f"[Preset] Đã nạp cấu hình mẫu: {p.get('name')}")
 
@@ -835,14 +867,14 @@ class DownloadView(ctk.CTkFrame):
             "audio_codec": self.audio_combo.get(),
             "concurrent_fragments": 4,
             "ratelimit": "Không giới hạn (Tối đa)",
-            "video_codec": "Tự động (Tối ưu)",
-            "fps_prefer": "60fps (Mượt mà)",
+            "video_codec": self.codec_combo.get() if not is_audio and hasattr(self, 'codec_combo') else "Không áp dụng",
+            "fps_prefer": self.fps_combo.get() if not is_audio and hasattr(self, 'fps_combo') else "Mặc định",
             "embed_subtitles": bool(self.sub_check.get()) if not is_audio else False,
             "auto_subs": True,
             "sub_langs": "vi,en",
             "embed_thumbnail": bool(self.thumb_check.get()),
             "add_metadata": bool(self.meta_check.get()),
-            "split_chapters": False
+            "split_chapters": bool(self.split_chap_check.get()) if hasattr(self, 'split_chap_check') else False
         }
         self.config_manager.add_or_update_preset(new_p)
         self.refresh_presets_in_view()
@@ -892,9 +924,9 @@ class DownloadView(ctk.CTkFrame):
         concurrent_fragments = p.get("concurrent_fragments", 4)
         ratelimit = p.get("ratelimit", "")
         auto_subs = p.get("auto_subs", True)
-        split_chapters = p.get("split_chapters", False)
-        video_codec = p.get("video_codec", "")
-        fps_prefer = p.get("fps_prefer", "")
+        split_chapters = bool(self.split_chap_check.get()) if hasattr(self, 'split_chap_check') else p.get("split_chapters", False)
+        video_codec = self.codec_combo.get() if hasattr(self, 'codec_combo') and not audio_only else p.get("video_codec", "")
+        fps_prefer = self.fps_combo.get() if hasattr(self, 'fps_combo') and not audio_only else p.get("fps_prefer", "")
 
         direct_url = None
         if self.current_meta:
