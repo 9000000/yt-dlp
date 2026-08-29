@@ -87,7 +87,7 @@ class ToolDLApp(ctk.CTk):
         # Các nút điều hướng tinh gọn (4 Mục Rõ Ràng)
         nav_items = [
             ("download", "📥 Tải & Duyệt Video", self.show_download_view),
-            ("presets", "🎛️ Cấu Hình Sẵn (Presets)", self.show_presets_view),
+            ("presets", "⚡ Cấu Hình Sẵn (Presets)", self.show_presets_view),
             ("settings", "⚙️ Cài Đặt & Phụ Trợ", self.show_settings_view),
             ("logs", "📜 Nhật Ký Hoạt Động", self.show_log_view),
         ]

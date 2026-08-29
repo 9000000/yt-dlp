@@ -39,7 +39,7 @@ class PresetsView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             hdr_row,
-            text="🎛️ QUẢN LÝ CẤU HÌNH SẴN (DOWNLOAD PRESETS)",
+            text="⚡ QUẢN LÝ CẤU HÌNH SẴN (DOWNLOAD PRESETS)",
             font=("Segoe UI", 15, "bold"),
             text_color=("#2563EB", "#38BDF8")
         ).pack(side="left")
@@ -328,7 +328,7 @@ class PresetsView(ctk.CTkFrame):
             self.split_chap_cb.deselect()
 
     def on_mode_changed(self, value):
-        if "Âm thanh" in value:
+        if "Chỉ lấy" in value or value == "audio":
             self.quality_combo.configure(state="disabled")
             self.fmt_combo.configure(state="disabled")
             self.codec_combo.configure(state="disabled")
@@ -379,7 +379,7 @@ class PresetsView(ctk.CTkFrame):
                 msgbox.showwarning("Cảnh báo", "Vui lòng nhập tên cho Preset!")
             return
 
-        is_audio = ("Âm thanh" in self.mode_seg.get())
+        is_audio = ("Chỉ lấy" in self.mode_seg.get() or self.mode_seg.get() == "audio")
         threads_str = self.threads_combo.get()
         threads_val = 4
         if "16" in threads_str:
