@@ -1,55 +1,58 @@
 """
-Công cụ Tạo License Key Bản Quyền (ToolDL Key Generator)
-Dành riêng cho Quản trị viên / Nhà phát triển để cấp mã kích hoạt (Gói Bản Quyền Đầy Đủ Duy Nhất).
+Công Cụ Tạo License Key Bản Quyền (ToolDL Key Generator)
+Chạy mượt mà trên MỌI NỀN TẢNG: Windows, macOS, Linux VÀ ANDROID (Termux, Pydroid 3, QPython).
+Tự động hoạt động độc lập (Standalone) mà không yêu cầu cài thêm bất kỳ thư viện ngoài nào.
 """
 
 import sys
+import os
+import json
+import time
+import hmac
+import hashlib
+import base64
 import argparse
 from pathlib import Path
 
-# Đảm bảo import được tool_gui
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from tool_gui.license_manager import LicenseManager
+# Khóa bí mật nội bộ đồng bộ với license_manager.py
+SECRET_SALT = b"ToolDL_Pro_2026_Secure_License_Master_Key_Secret!#@987"
 
-def cli_generator():
-    parser = argparse.ArgumentParser(description="ToolDL License Key Generator")
-    parser.add_argument("-m", "--machine", default="ALL", help="Mã Machine ID của máy khách (hoặc 'ALL' cho mọi máy)")
-    parser.add_argument("-d", "--days", type=int, default=0, help="Số ngày sử dụng (0 = Vĩnh viễn / Lifetime)")
-    parser.add_argument("-c", "--count", type=int, default=1, help="Số lượng key cần tạo")
-    parser.add_argument("--gui", action="store_true", help="Mở giao diện đồ họa tạo Key")
+class StandaloneLicenseGenerator:
+    """Bộ tạo License Key độc lập không phụ thuộc thư mục dự án."""
 
-    args = parser.parse_args()
+    @staticmethod
+    def _create_signature(payload_str: str) -> str:
+        h = hmac.new(SECRET_SALT, payload_str.encode('utf-8'), hashlib.sha256)
+        return h.hexdigest()[:16].upper()
 
-    if args.gui:
-        launch_gui()
-        return
-
-    # Nếu không truyền tham số nào, mở menu tương tác
-    if len(sys.argv) == 1:
-        interactive_menu()
-        return
-
-    print("\n" + "=" * 50)
-    print("      CÔNG CỤ TẠO LICENSE KEY - TOOLDL")
-    print("=" * 50)
-    print(f"Machine ID : {args.machine}")
-    print(f"Thời hạn   : {'Vĩnh viễn (Lifetime)' if args.days == 0 else f'{args.days} ngày'}")
-    print(f"Bản quyền  : Đầy đủ (Full Tính Năng)")
-    print(f"Số lượng   : {args.count}")
-    print("-" * 50)
-
-    for i in range(args.count):
-        key = LicenseManager.generate_license_key(
-            machine_id=args.machine,
-            days_valid=args.days
-        )
-        print(f"Key [{i+1}]: {key}")
-    print("=" * 50 + "\n")
+    @classmethod
+    def generate_license_key(cls, machine_id: str = "ALL", days_valid: int = 0) -> str:
+        """
+        Tạo License Key hợp lệ.
+        - machine_id: "ALL" (dùng cho mọi máy) hoặc Mã Machine ID cụ thể (ví dụ: TDL-A1B2-C3D4-E5F6).
+        - days_valid: 0 là vĩnh viễn (Lifetime), >0 là số ngày sử dụng.
+        """
+        now = int(time.time())
+        exp_time = (now + days_valid * 86400) if days_valid > 0 else 0
+        
+        payload = {
+            "m": machine_id.strip().upper(),
+            "e": exp_time,
+            "t": "FULL",
+            "i": now
+        }
+        
+        payload_json = json.dumps(payload, separators=(',', ':'), sort_keys=True)
+        payload_b64 = base64.urlsafe_b64encode(payload_json.encode('utf-8')).decode('utf-8').rstrip('=')
+        
+        sig = cls._create_signature(payload_b64)
+        return f"{payload_b64}.{sig}"
 
 def interactive_menu():
-    print("\n" + "=" * 50)
-    print("       TRÌNH TẠO MÃ KÍCH HOẠT TOOLDL")
-    print("=" * 50)
+    print("\n" + "=" * 55)
+    print("   🔑 TRÌNH TẠO MÃ KÍCH HOẠT TOOLDL PRO")
+    print("   📱 Chạy trực tiếp trên Android, Windows, Linux, Mac")
+    print("=" * 55)
     
     # 1. Machine ID
     print("\n1. Đối tượng áp dụng:")
@@ -86,20 +89,20 @@ def interactive_menu():
     else:
         days = 0
 
-    # Tạo Key (Gói duy nhất)
-    key = LicenseManager.generate_license_key(machine_id, days)
+    # Tạo Key
+    key = StandaloneLicenseGenerator.generate_license_key(machine_id, days)
     
-    print("\n" + "=" * 50)
-    print("✅ ĐÃ TẠO KEY THÀNH CÔNG:")
-    print("-" * 50)
-    print(f"🔑 LICENSE KEY : {key}")
-    print("-" * 50)
-    print(f"📌 Áp dụng     : {machine_id}")
-    print(f"⏳ Hạn sử dụng : {'Vĩnh viễn' if days == 0 else f'{days} ngày'}")
-    print(f"⭐ Bản quyền   : Đầy đủ (Full Tính Năng)")
-    print("=" * 50 + "\n")
+    print("\n" + "=" * 55)
+    print(" ✅ ĐÃ TẠO KEY THÀNH CÔNG:")
+    print("-" * 55)
+    print(f" 🔑 KEY: {key}")
+    print("-" * 55)
+    print(f" 📌 Áp dụng     : {machine_id}")
+    print(f" ⏳ Hạn sử dụng : {'Vĩnh viễn (Lifetime)' if days == 0 else f'{days} ngày'}")
+    print(f" ⭐ Bản quyền   : Gói Đầy Đủ (Full Pro)")
+    print("=" * 55 + "\n")
 
-    # Tự động copy vào clipboard nếu có tkinter
+    # Tự động copy vào clipboard nếu hỗ trợ
     try:
         import tkinter as tk
         r = tk.Tk()
@@ -108,9 +111,46 @@ def interactive_menu():
         r.clipboard_append(key)
         r.update()
         r.destroy()
-        print("📋 Đã tự động copy Key vào Clipboard (Khay nhớ tạm)!")
+        print("📋 Đã tự động copy Key vào Clipboard!")
     except Exception:
         pass
+
+def cli_generator():
+    parser = argparse.ArgumentParser(description="ToolDL Standalone License Key Generator")
+    parser.add_argument("-m", "--machine", default="ALL", help="Mã Machine ID của máy khách (hoặc 'ALL' cho mọi máy)")
+    parser.add_argument("-d", "--days", type=int, default=0, help="Số ngày sử dụng (0 = Vĩnh viễn / Lifetime)")
+    parser.add_argument("-c", "--count", type=int, default=1, help="Số lượng key cần tạo")
+    parser.add_argument("--gui", action="store_true", help="Mở giao diện đồ họa tạo Key (nếu có hỗ trợ Tkinter)")
+
+    args = parser.parse_args()
+
+    if args.gui:
+        try:
+            launch_gui()
+            return
+        except Exception as e:
+            print(f"⚠️ Môi trường không hỗ trợ GUI Tkinter ({e}). Chuyển sang Menu tương tác CLI.")
+
+    # Nếu không truyền tham số nào, mở menu tương tác
+    if len(sys.argv) == 1:
+        interactive_menu()
+        return
+
+    print("\n" + "=" * 50)
+    print("      CÔNG CỤ TẠO LICENSE KEY - TOOLDL")
+    print("=" * 50)
+    print(f"Machine ID : {args.machine}")
+    print(f"Thời hạn   : {'Vĩnh viễn (Lifetime)' if args.days == 0 else f'{args.days} ngày'}")
+    print(f"Số lượng   : {args.count}")
+    print("-" * 50)
+
+    for i in range(args.count):
+        key = StandaloneLicenseGenerator.generate_license_key(
+            machine_id=args.machine,
+            days_valid=args.days
+        )
+        print(f"Key [{i+1}]: {key}")
+    print("=" * 50 + "\n")
 
 def launch_gui():
     import customtkinter as ctk
@@ -160,7 +200,7 @@ def launch_gui():
         }
         days = days_map.get(dur_str, 0)
 
-        key = LicenseManager.generate_license_key(m_val, days)
+        key = StandaloneLicenseGenerator.generate_license_key(m_val, days)
         res_entry.delete(0, "end")
         res_entry.insert(0, key)
         root.clipboard_clear()
