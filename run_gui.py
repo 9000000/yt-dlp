@@ -1,6 +1,6 @@
 """
 Điểm khởi chạy ứng dụng ToolDL (Main Entry Point).
-Khởi động giao diện người dùng đồ họa (GUI).
+Khởi động giao diện người dùng đồ họa (GUI) hoặc Trình duyệt Web độc lập.
 """
 
 import sys
@@ -19,6 +19,13 @@ if sys.platform == "win32":
         sys.stderr.reconfigure(encoding='utf-8')
     except Exception:
         pass
+
+# Kiểm tra nếu chạy chế độ Trình duyệt độc lập
+if len(sys.argv) > 1 and sys.argv[1] == "--browser":
+    from tool_gui.browser_launcher import launch
+    target = sys.argv[2] if len(sys.argv) > 2 else "https://www.youtube.com"
+    launch(target)
+    sys.exit(0)
 
 from tool_gui.app import ToolDLApp
 

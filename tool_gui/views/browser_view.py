@@ -290,24 +290,19 @@ class BrowserView(ctk.CTkFrame):
             msgbox.showinfo("Thành công", f"Đã chuyển {len(selected_urls)} video sang danh sách Tải Hàng Loạt!")
 
     def on_open_embedded_browser(self):
-        """Mở cửa sổ trình duyệt Edge WebView2 nhúng."""
+        """Mở cửa sổ trình duyệt Edge WebView2 nhúng trong tiến trình riêng."""
+        import subprocess
+        from pathlib import Path
         target_url = self.url_entry.get().strip() or "https://www.youtube.com"
+        self.log(f"[Trình duyệt] Đang khởi chạy Trình duyệt Web (Edge WebView2): {target_url}")
 
-        if webview:
-            self.log(f"[Trình duyệt] Đang khởi chạy Edge WebView2: {target_url}")
-            
-            def run_webview():
-                w = webview.create_window(
-                    title="ToolDL Pro - Trình Duyệt Web & Xem Video",
-                    url=target_url,
-                    width=1080,
-                    height=720,
-                    resizable=True
-                )
-                webview.start()
-
-            threading.Thread(target=run_webview, daemon=True).start()
-        else:
-            # Fallback mở qua trình duyệt mặc định nếu không có pywebview
+        try:
+            if getattr(sys, 'frozen', False):
+                subprocess.Popen([sys.executable, "--browser", target_url])
+            else:
+                launcher_py = Path(__file__).resolve().parent.parent / "browser_launcher.py"
+                subprocess.Popen([sys.executable, str(launcher_py), target_url])
+        except Exception as e:
+            self.log(f"[Trình duyệt] Mở qua trình duyệt hệ thống: {e}")
             import webbrowser
             webbrowser.open(target_url)
