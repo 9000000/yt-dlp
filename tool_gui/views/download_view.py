@@ -37,6 +37,8 @@ class DownloadView(ctk.CTkFrame):
         self.current_task = None
         self.is_downloading = False
         self.last_analyzed_url = ""
+        self.selected_custom_format_id = ""
+        self.selected_custom_format_desc = ""
 
         # Trạng thái tải hàng loạt
         self.queue_items = []
@@ -265,6 +267,43 @@ class DownloadView(ctk.CTkFrame):
 
         self.duration_label = ctk.CTkLabel(pv_body, text="⏱️ Thời lượng: --", font=("Segoe UI", 9), text_color=("#64748B", "#94A3B8"), anchor="w")
         self.duration_label.pack(anchor="w")
+
+        # Nút Xem & Chọn Luồng Chi Tiết
+        self.cf_row = ctk.CTkFrame(pv_body, fg_color="transparent")
+        self.cf_row.pack(fill="x", pady=(4, 0))
+
+        self.btn_select_format = ctk.CTkButton(
+            self.cf_row,
+            text="🎛️ Xem & Chọn Luồng Chi Tiết...",
+            height=28,
+            command=self.on_open_format_picker,
+            font=("Segoe UI", 10, "bold"),
+            fg_color="#3B82F6",
+            hover_color="#2563EB"
+        )
+        self.btn_select_format.pack(side="left", fill="x", expand=True, padx=(0, 4))
+
+        self.btn_clear_format = ctk.CTkButton(
+            self.cf_row,
+            text="✕ Tự động",
+            width=70,
+            height=28,
+            command=self.on_clear_custom_format,
+            font=("Segoe UI", 9),
+            fg_color="#64748B",
+            hover_color="#475569"
+        )
+
+        self.custom_format_badge = ctk.CTkLabel(
+            pv_body,
+            text="",
+            font=("Segoe UI", 9, "bold"),
+            text_color=("#10B981", "#34D399"),
+            anchor="w",
+            wraplength=320,
+            justify="left"
+        )
+        self.custom_format_badge.pack(anchor="w", fill="x", pady=(2, 0))
 
         # Cột Phải: Cài đặt chất lượng
         opt_card = ctk.CTkFrame(mid_grid, corner_radius=10)
@@ -500,8 +539,45 @@ class DownloadView(ctk.CTkFrame):
             self.quality_combo.configure(values=qualities)
             self.quality_combo.set(qualities[0])
 
+        # Đặt lại format tùy chỉnh khi phân tích video mới
+        self.on_clear_custom_format()
+
         self.prog_label.configure(text="✅ Phân tích thành công! Sẵn sàng tải xuống.")
         self.log(f"[Phân tích] Thành công: {meta.get('title')}")
+
+    def on_open_format_picker(self):
+        """Mở cửa sổ xem và chọn luồng chi tiết Video/Audio/Combined."""
+        if not self.current_meta or not self.current_meta.get("formats"):
+            msgbox.showinfo("Thông báo", "Vui lòng nhập link và bấm '⚡ Phân Tích Tự Động' trước để quét danh sách các luồng Video & Âm thanh!")
+            return
+        from tool_gui.views.format_picker_dialog import FormatPickerDialog
+        FormatPickerDialog(
+            master=self.winfo_toplevel(),
+            meta=self.current_meta,
+            current_custom_id=self.selected_custom_format_id,
+            on_apply=self.on_apply_custom_format
+        )
+
+    def on_apply_custom_format(self, custom_id: str, desc: str):
+        """Áp dụng chuỗi định dạng tùy chọn từ FormatPickerDialog."""
+        self.selected_custom_format_id = custom_id
+        self.selected_custom_format_desc = desc
+        if custom_id:
+            self.custom_format_badge.configure(text=f"🎯 Luồng tùy chọn: {desc}")
+            self.btn_clear_format.pack(side="right")
+            self.log(f"[Format Selector] Đã chọn luồng tùy chỉnh: {custom_id} ({desc})")
+        else:
+            self.on_clear_custom_format()
+
+    def on_clear_custom_format(self):
+        """Xóa luồng tùy chỉnh, quay lại chế độ Tự động tải theo cấu hình preset."""
+        self.selected_custom_format_id = ""
+        self.selected_custom_format_desc = ""
+        if hasattr(self, 'custom_format_badge'):
+            self.custom_format_badge.configure(text="")
+        if hasattr(self, 'btn_clear_format'):
+            self.btn_clear_format.pack_forget()
+        self.log("[Format Selector] Đang sử dụng chế độ Tải Tự Động theo Preset.")
 
     def _handle_single_error(self, err_msg: str):
         self.status_badge.configure(text="❌ Thất bại", fg_color="#EF4444", text_color="white")
@@ -1099,6 +1175,7 @@ class DownloadView(ctk.CTkFrame):
             split_chapters=split_chapters,
             video_codec=video_codec,
             fps_prefer=fps_prefer,
+            custom_format_id=self.selected_custom_format_id,
             on_progress=self._on_download_progress,
             on_status=self._on_download_status,
             on_finish=self._on_download_finished

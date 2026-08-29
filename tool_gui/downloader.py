@@ -54,6 +54,7 @@ class DownloadTask:
         split_chapters: bool = False,
         video_codec: str = "",
         fps_prefer: str = "",
+        custom_format_id: str = "",
         on_progress: Callable[[dict], None] = None,
         on_status: Callable[[str], None] = None,
         on_finish: Callable[[bool, str, str], None] = None
@@ -81,6 +82,7 @@ class DownloadTask:
         self.split_chapters = split_chapters
         self.video_codec = video_codec
         self.fps_prefer = fps_prefer
+        self.custom_format_id = custom_format_id
 
         self.on_progress = on_progress
         self.on_status = on_status
@@ -102,6 +104,9 @@ class DownloadTask:
 
     def _build_format_spec(self) -> str:
         """Xây dựng chuỗi định dạng chọn chất lượng video và codec cho yt-dlp."""
+        if self.custom_format_id:
+            return self.custom_format_id
+
         if self.audio_only:
             return "bestaudio/best"
 
