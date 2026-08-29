@@ -84,6 +84,8 @@ class DownloadView(ctk.CTkFrame):
         )
         self.universal_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
         self.universal_entry.bind("<Return>", lambda e: self.on_auto_detect_action())
+        self.universal_entry.bind("<Button-1>", lambda e: self._on_entry_click(self.universal_entry))
+        self._bind_context_menu(self.universal_entry)
 
         paste_btn = ctk.CTkButton(
             top_inner,
@@ -637,6 +639,9 @@ class DownloadView(ctk.CTkFrame):
         self.browser_address_entry.insert(0, "https://www.youtube.com")
         self.browser_address_entry.pack(side="left", fill="x", expand=True, padx=(0, 4))
         self.browser_address_entry.bind("<Return>", lambda e: self.on_browser_navigate())
+        self.browser_address_entry.bind("<Button-1>", lambda e: self._on_entry_click(self.browser_address_entry))
+        self.browser_address_entry.bind("<KeyPress>", self._on_browser_entry_typing)
+        self._bind_context_menu(self.browser_address_entry)
 
         btn_go = ctk.CTkButton(bc_inner, text="Đi", width=45, height=32, command=self.on_browser_navigate, font=("Segoe UI", 11, "bold"))
         btn_go.pack(side="left", padx=(0, 8))
@@ -801,13 +806,73 @@ class DownloadView(ctk.CTkFrame):
         if self.browser_mgr and event.width > 50 and event.height > 50:
             self.browser_mgr.resize(event.width, event.height)
 
-    def _start_browser_sync_watcher(self):
-        """Đồng bộ địa chỉ URL đang duyệt trên Chromium lên thanh địa chỉ của GUI."""
+    def _on_entry_click(self, widget):
+        widget.focus_force()
+        if hasattr(widget, "_entry"):
+            widget._entry.focus_force()
+
+    def _on_browser_entry_typing(self, event=None):
+        self._last_user_typing_time = time.time()
+
+    def _bind_context_menu(self, entry_widget):
+        menu = tk.Menu(self, tearoff=0)
+        menu.add_command(label="📋 Dán liên kết (Paste)", command=lambda: self._paste_to_widget(entry_widget))
+        menu.add_command(label="📄 Sao chép (Copy)", command=lambda: self._copy_from_widget(entry_widget))
+        menu.add_command(label="🧹 Xóa hết (Clear)", command=lambda: entry_widget.delete(0, "end"))
+        menu.add_separator()
+        menu.add_command(label="🔍 Chọn tất cả (Select All)", command=lambda: self._select_all_widget(entry_widget))
+
+        def _show_menu(event):
+            self._on_entry_click(entry_widget)
+            try:
+                menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                menu.grab_release()
+
+        entry_widget.bind("<Button-3>", _show_menu)
+        if hasattr(entry_widget, "_entry"):
+            entry_widget._entry.bind("<Button-3>", _show_menu)
+            entry_widget._entry.bind("<Button-1>", lambda e: self._on_entry_click(entry_widget))
+
+    def _paste_to_widget(self, entry_widget):
         try:
-            if self.url_sync_file.exists():
+            val = self.clipboard_get().strip()
+            if val:
+                entry_widget.delete(0, "end")
+                entry_widget.insert(0, val)
+                self._on_entry_click(entry_widget)
+        except Exception:
+            pass
+
+    def _copy_from_widget(self, entry_widget):
+        try:
+            val = entry_widget.get().strip()
+            if val:
+                self.clipboard_clear()
+                self.clipboard_append(val)
+        except Exception:
+            pass
+
+    def _select_all_widget(self, entry_widget):
+        if hasattr(entry_widget, "_entry"):
+            entry_widget._entry.select_range(0, "end")
+            entry_widget._entry.icursor("end")
+
+    def _start_browser_sync_watcher(self):
+        """Đồng bộ địa chỉ URL đang duyệt trên Chromium lên thanh địa chỉ của GUI (không ghi đè khi người dùng đang nhập)."""
+        try:
+            now = time.time()
+            focused = self.focus_get()
+            is_typing = (now - getattr(self, "_last_user_typing_time", 0)) < 4.0
+            is_focused = (
+                focused == self.browser_address_entry or
+                focused == getattr(self.browser_address_entry, "_entry", None)
+            )
+
+            if not is_typing and not is_focused and self.url_sync_file.exists():
                 with open(self.url_sync_file, "r", encoding="utf-8") as f:
                     cur = f.read().strip()
-                if cur and cur != self.browser_address_entry.get().strip() and self.focus_get() != self.browser_address_entry:
+                if cur and cur != self.browser_address_entry.get().strip():
                     self.browser_address_entry.delete(0, "end")
                     self.browser_address_entry.insert(0, cur)
         except Exception:
