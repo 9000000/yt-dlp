@@ -82,6 +82,7 @@ def prepare_staging_with_pyd():
         cmd = [
             sys.executable, "-m", "nuitka",
             "--mode=module",
+            "--nofollow-imports",
             "--remove-output",
             "--no-pyi-file",
             f"--output-dir={stg_py.parent}",
