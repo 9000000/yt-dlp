@@ -82,6 +82,19 @@ class UpdaterManager:
         except Exception:
             return "Không xác định"
 
+    @staticmethod
+    def parse_version(ver_str: str):
+        """Phân tích và chuẩn hóa phiên bản để so sánh chính xác (tránh lỗi 2026.08.19 vs 2026.8.19)."""
+        try:
+            from packaging import version
+            return version.parse(str(ver_str))
+        except Exception:
+            pass
+
+        import re
+        nums = [int(x) for x in re.findall(r'\d+', str(ver_str))]
+        return tuple(nums) if nums else (0,)
+
     def check_ytdlp_latest_version(self) -> tuple[bool, str]:
         """
         Kiểm tra phiên bản yt-dlp mới nhất từ máy chủ PyPI.
@@ -94,7 +107,9 @@ class UpdaterManager:
                 latest_ver = data.get("info", {}).get("version", "")
                 current_ver = self.get_ytdlp_version()
                 if latest_ver and current_ver:
-                    has_update = (latest_ver > current_ver)
+                    v_latest = self.parse_version(latest_ver)
+                    v_current = self.parse_version(current_ver)
+                    has_update = (v_latest > v_current)
                     return has_update, latest_ver
             return False, "Không thể kiểm tra"
         except Exception as e:
