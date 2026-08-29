@@ -160,7 +160,6 @@ def build_standalone_exe():
         "--standalone",
         "--windows-console-mode=disable",
         "--enable-plugin=tk-inter",
-        "--enable-plugin=pywebview",
         "--include-package=customtkinter",
         "--include-package-data=customtkinter",
         "--include-package=yt_dlp",
