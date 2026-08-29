@@ -1,6 +1,6 @@
 """
 Cửa sổ Ứng dụng Chính (Main Application Window).
-Điều hướng các phân hệ chức năng, giám sát Clipboard, xác thực bản quyền 100% Tiếng Việt.
+Không gian làm việc Hợp nhất Tất-Cả-Trong-Một: Tải Đơn, Tải Hàng Loạt, Quét Trang & Trình Duyệt Web 100% Tiếng Việt.
 """
 
 import sys
@@ -14,9 +14,6 @@ from tool_gui.license_manager import LicenseManager
 from tool_gui.updater import UpdaterManager
 from tool_gui.views.activation_view import ActivationView
 from tool_gui.views.download_view import DownloadView
-from tool_gui.views.batch_view import BatchView
-from tool_gui.views.search_view import SearchView
-from tool_gui.views.browser_view import BrowserView
 from tool_gui.views.tools_view import ToolsView
 from tool_gui.views.settings_view import SettingsView
 from tool_gui.views.log_view import LogView
@@ -38,7 +35,7 @@ class ToolDLApp(ctk.CTk):
         ctk.set_default_color_theme("blue")
 
         # Cấu hình Cửa sổ
-        self.title("ToolDL Pro - Trình Tải Video Đa Nền Tảng & Quản Lý Phụ Trợ")
+        self.title("ToolDL Pro - Trình Tải Video & Duyệt Web Hợp Nhất")
         self.geometry("1100x720")
         self.minsize(960, 620)
 
@@ -68,7 +65,7 @@ class ToolDLApp(ctk.CTk):
         # 1. SIDEBAR ĐIỀU HƯỚNG BÊN TRÁI
         self.sidebar = ctk.CTkFrame(self, width=220, corner_radius=0)
         self.sidebar.grid(row=0, column=0, sticky="nsew")
-        self.sidebar.grid_rowconfigure(9, weight=1)
+        self.sidebar.grid_rowconfigure(6, weight=1)
 
         # Logo / Brand
         logo_lbl = ctk.CTkLabel(
@@ -81,18 +78,15 @@ class ToolDLApp(ctk.CTk):
 
         sub_logo = ctk.CTkLabel(
             self.sidebar,
-            text="Trình Tải Video & Quản Lý FFmpeg",
+            text="Tải Video & Trình Duyệt Web",
             font=("Segoe UI", 10),
             text_color=("#64748B", "#94A3B8")
         )
-        sub_logo.grid(row=1, column=0, padx=20, pady=(0, 15), sticky="w")
+        sub_logo.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="w")
 
-        # Các nút điều hướng
+        # Các nút điều hướng tinh gọn (4 Mục Chính Hợp Nhất)
         nav_items = [
-            ("download", "📥 Tải Video", self.show_download_view),
-            ("batch", "📋 Tải Hàng Loạt", self.show_batch_view),
-            ("search", "🔍 Tìm Video", self.show_search_view),
-            ("browser", "🌐 Trình Duyệt Web", self.show_browser_view),
+            ("download", "📥 Tải & Duyệt Video", self.show_download_view),
             ("tools", "🔧 Quản Lý Phụ Trợ", self.show_tools_view),
             ("settings", "⚙ Cài Đặt", self.show_settings_view),
             ("logs", "📜 Nhật Ký", self.show_log_view),
@@ -103,15 +97,15 @@ class ToolDLApp(ctk.CTk):
                 self.sidebar,
                 text=title,
                 command=cmd,
-                height=38,
+                height=42,
                 corner_radius=8,
-                font=("Segoe UI", 12, "bold"),
+                font=("Segoe UI", 13, "bold"),
                 anchor="w",
                 fg_color="transparent",
                 text_color=("#334155", "#E2E8F0"),
                 hover_color=("#E2E8F0", "#334155")
             )
-            btn.grid(row=i + 2, column=0, padx=15, pady=3, sticky="ew")
+            btn.grid(row=i + 2, column=0, padx=15, pady=4, sticky="ew")
             self.nav_buttons[key] = btn
 
         # Badge bản quyền ở chân sidebar
@@ -121,7 +115,7 @@ class ToolDLApp(ctk.CTk):
             font=("Segoe UI", 11, "bold"),
             text_color="#10B981"
         )
-        self.lic_badge.grid(row=10, column=0, padx=20, pady=(10, 15), sticky="w")
+        self.lic_badge.grid(row=7, column=0, padx=20, pady=(10, 15), sticky="w")
 
         # 2. KHUNG NỘI DUNG CHÍNH (CONTAINER BÊN PHẢI)
         self.container = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
@@ -132,22 +126,6 @@ class ToolDLApp(ctk.CTk):
         # Khởi tạo sẵn các Views
         self.log_view = LogView(self.container)
         self.download_view = DownloadView(self.container, self.config_manager, log_callback=self.log_view.append_log)
-        self.batch_view = BatchView(self.container, self.config_manager, log_callback=self.log_view.append_log)
-        
-        self.search_view = SearchView(
-            self.container,
-            on_download_single=self.open_single_download_with_url,
-            on_download_batch=self.open_batch_download_with_urls,
-            log_callback=self.log_view.append_log
-        )
-
-        self.browser_view = BrowserView(
-            self.container,
-            on_download_single=self.open_single_download_with_url,
-            on_download_batch=self.open_batch_download_with_urls,
-            log_callback=self.log_view.append_log
-        )
-
         self.tools_view = ToolsView(self.container, self.config_manager, log_callback=self.log_view.append_log)
         self.settings_view = SettingsView(
             self.container,
@@ -189,9 +167,6 @@ class ToolDLApp(ctk.CTk):
         for v in [
             self.activation_view,
             self.download_view,
-            self.batch_view,
-            self.search_view,
-            self.browser_view,
             self.tools_view,
             self.settings_view,
             self.log_view
@@ -211,21 +186,6 @@ class ToolDLApp(ctk.CTk):
         self._set_active_nav("download")
         self.download_view.grid(row=0, column=0, sticky="nsew")
 
-    def show_batch_view(self):
-        self._hide_all_views()
-        self._set_active_nav("batch")
-        self.batch_view.grid(row=0, column=0, sticky="nsew")
-
-    def show_search_view(self):
-        self._hide_all_views()
-        self._set_active_nav("search")
-        self.search_view.grid(row=0, column=0, sticky="nsew")
-
-    def show_browser_view(self):
-        self._hide_all_views()
-        self._set_active_nav("browser")
-        self.browser_view.grid(row=0, column=0, sticky="nsew")
-
     def show_tools_view(self):
         self._hide_all_views()
         self._set_active_nav("tools")
@@ -242,19 +202,6 @@ class ToolDLApp(ctk.CTk):
         self._hide_all_views()
         self._set_active_nav("logs")
         self.log_view.grid(row=0, column=0, sticky="nsew")
-
-    def open_single_download_with_url(self, url: str):
-        """Chuyển sang màn hình Tải Đơn và nạp sẵn URL để phân tích."""
-        self.show_download_view()
-        self.download_view.url_entry.delete(0, "end")
-        self.download_view.url_entry.insert(0, url)
-        self.download_view.on_analyze_clicked()
-
-    def open_batch_download_with_urls(self, urls: list):
-        """Chuyển sang màn hình Tải Hàng Loạt và nạp sẵn danh sách URL."""
-        self.show_batch_view()
-        self.batch_view.text_urls.delete("1.0", "end")
-        self.batch_view.text_urls.insert("end", "\n".join(urls) + "\n")
 
     def start_clipboard_monitor(self):
         """Khởi động luồng theo dõi khay nhớ tạm (Clipboard)."""
