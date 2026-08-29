@@ -1,7 +1,7 @@
 """
 Màn hình Tải & Duyệt Video Hợp Nhất (Unified Downloader & In-App Browser Workspace).
 - Tự động nhận diện loại liên kết (Link đơn, Playlist/Kênh/Trang web, Từ khóa tìm kiếm).
-- Tích hợp Trình duyệt Web Edge WebView2 nhúng trực tiếp ngay trong GUI (không mở cửa sổ ngoài).
+- Tích hợp Trình duyệt Web Natively nhúng trực tiếp ngay trong GUI (HtmlFrame / WebView).
 - Nút Quét trang tự động lấy URL đang duyệt trong trình duyệt nhúng để trích xuất video tức thì kèm Thumbnail.
 """
 
@@ -16,6 +16,11 @@ import customtkinter as ctk
 import tkinter.messagebox as msgbox
 from tkinter import filedialog
 from PIL import Image
+
+try:
+    from tkinterweb import HtmlFrame
+except ImportError:
+    HtmlFrame = None
 
 from tool_gui.url_detector import URLDetector
 from tool_gui.downloader import DownloadTask
@@ -43,12 +48,12 @@ class DownloadView(ctk.CTkFrame):
 
         # Trạng thái tìm kiếm & quét trang
         self.search_results = []
-        self.embedded_browser_proc = None
+        self.html_browser = None
+        self.browser_loaded = False
 
-        # File lưu URL đang duyệt
+        # Thư mục gốc
         self.app_dir = Path(__file__).resolve().parent.parent.parent
         self.tool_dir = Path(__file__).resolve().parent.parent
-        self.url_sync_file = self.app_dir / ".current_browser_url.txt"
 
         self.setup_ui()
 
@@ -113,7 +118,7 @@ class DownloadView(ctk.CTkFrame):
 
         self.mode_switcher = ctk.CTkSegmentedButton(
             switcher_card,
-            values=["🎬 Tải Video Đơn", "📑 Tải Hàng Loạt & Danh Sách", "🌐 Trình Duyệt Web Nhúng"],
+            values=["🎬 Tải Video Đơn", "📑 Tải Hàng Loạt & Danh Sách", "🌐 Trình Duyệt Web Trực Tiếp"],
             command=self.on_mode_switched,
             height=32,
             font=("Segoe UI", 11, "bold")
@@ -162,7 +167,14 @@ class DownloadView(ctk.CTkFrame):
         self.frame_single.pack_forget()
         self.frame_batch.pack_forget()
         self.frame_browser.pack(fill="both", expand=True)
-        self.mode_switcher.set("🌐 Trình Duyệt Web Nhúng")
+        self.mode_switcher.set("🌐 Trình Duyệt Web Trực Tiếp")
+
+        # Tự động nạp trang web vào trình duyệt nhúng khi mở tab
+        if not self.browser_loaded:
+            self.browser_loaded = True
+            init_url = self.universal_entry.get().strip()
+            target = init_url if URLDetector.is_valid_url(init_url) else "https://www.youtube.com"
+            self.load_url_into_browser(target)
 
     # =========================================================================
     # TỰ ĐỘNG NHẬN DIỆN LIÊN KẾT THÔNG MINH
@@ -198,6 +210,7 @@ class DownloadView(ctk.CTkFrame):
         # 2. Nếu là từ khóa tìm kiếm (không phải URL) -> Chuyển sang Tìm kiếm & quét
         if not URLDetector.is_valid_url(target):
             self.show_browser_mode()
+            self.load_url_into_browser(f"https://www.google.com/search?q={target}")
             self.browser_search_worker(target, is_keyword=True)
             return
 
@@ -205,6 +218,7 @@ class DownloadView(ctk.CTkFrame):
         t_low = target.lower()
         if "playlist?list=" in t_low or "/channel/" in t_low or "/user/" in t_low or "/c/" in t_low or "/@" in t_low and "/video/" not in t_low:
             self.show_browser_mode()
+            self.load_url_into_browser(target)
             self.browser_search_worker(target, is_keyword=False)
             return
 
@@ -476,64 +490,75 @@ class DownloadView(ctk.CTkFrame):
         self.batch_scroll.pack(fill="both", expand=True)
 
     # =========================================================================
-    # CHẾ ĐỘ 3: TRÌNH DUYỆT WEB NHÚNG & QUÉT TRANG TỨC THÌ (IN-APP BROWSER)
+    # CHẾ ĐỘ 3: TRÌNH DUYỆT WEB TRỰC TIẾP TRONG GUI (NATIVE IN-APP BROWSER)
     # =========================================================================
     def setup_browser_mode_ui(self):
-        # 1. Thanh điều khiển trình duyệt nhúng & quét tức thì
+        # 1. Thanh điều hướng trình duyệt & Quét video
         br_ctrl = ctk.CTkFrame(self.frame_browser, corner_radius=10)
         br_ctrl.pack(fill="x", pady=(0, 8))
 
         bc_inner = ctk.CTkFrame(br_ctrl, fg_color="transparent")
-        bc_inner.pack(fill="x", padx=10, pady=8)
+        bc_inner.pack(fill="x", padx=10, pady=6)
 
-        # Nút Quét Link Đang Mở trong Trình duyệt nhúng
+        # Nút điều hướng
+        ctk.CTkButton(bc_inner, text="🏠", width=32, height=30, command=lambda: self.load_url_into_browser("https://www.youtube.com"), font=("Segoe UI", 11)).pack(side="left", padx=(0, 4))
+        ctk.CTkButton(bc_inner, text="🔄", width=32, height=30, command=self.on_browser_reload, font=("Segoe UI", 11)).pack(side="left", padx=(0, 6))
+
+        self.browser_address_entry = ctk.CTkEntry(
+            bc_inner,
+            placeholder_text="Nhập địa chỉ web hoặc tìm kiếm (VD: https://www.youtube.com, facebook.com, tiktok.com...)",
+            font=("Segoe UI", 10),
+            height=30
+        )
+        self.browser_address_entry.insert(0, "https://www.youtube.com")
+        self.browser_address_entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
+        self.browser_address_entry.bind("<Return>", lambda e: self.on_browser_navigate())
+
+        ctk.CTkButton(bc_inner, text="🔍 Đi", width=45, height=30, command=self.on_browser_navigate, font=("Segoe UI", 10, "bold"), fg_color="#3B82F6", hover_color="#2563EB").pack(side="left", padx=(0, 6))
+
+        # Nút Quét Video Trên Trang
         self.btn_scan_current_live = ctk.CTkButton(
             bc_inner,
-            text="🔍 QUÉT VIDEO TRÊN TRANG ĐANG XEM NÀY",
-            height=34,
+            text="🔍 QUÉT VIDEO TRANG NÀY",
+            height=30,
             command=self.on_scan_current_browser_url,
-            font=("Segoe UI", 11, "bold"),
+            font=("Segoe UI", 10, "bold"),
             fg_color="#10B981",
             hover_color="#059669"
         )
-        self.btn_scan_current_live.pack(side="left", padx=(0, 8))
+        self.btn_scan_current_live.pack(side="left", padx=(0, 6))
 
         self.btn_download_current_live = ctk.CTkButton(
             bc_inner,
-            text="⚡ TẢI VIDEO ĐANG XEM NÀY",
-            height=34,
+            text="⚡ TẢI VIDEO NÀY",
+            height=30,
             command=self.on_download_current_browser_video,
-            font=("Segoe UI", 11, "bold"),
-            fg_color="#3B82F6",
-            hover_color="#2563EB"
+            font=("Segoe UI", 10, "bold"),
+            fg_color="#F59E0B",
+            hover_color="#D97706"
         )
-        self.btn_download_current_live.pack(side="left", padx=(0, 8))
+        self.btn_download_current_live.pack(side="left")
 
-        self.btn_launch_embedded = ctk.CTkButton(
-            bc_inner,
-            text="🌐 MỞ / TẢI LẠI TRÌNH DUYỆT TRONG APP",
-            height=34,
-            command=self.on_launch_embedded_browser_frame,
-            font=("Segoe UI", 11, "bold"),
-            fg_color="#8B5CF6",
-            hover_color="#7C3AED"
-        )
-        self.btn_launch_embedded.pack(side="right")
-
-        # 2. Không gian nhúng Trình Duyệt Web & Danh Sách Quét (2 Nửa Màn Hình)
+        # 2. Không gian 2 cột: Trình duyệt web bên trái + Kết quả quét bên phải
         br_body = ctk.CTkFrame(self.frame_browser, fg_color="transparent")
         br_body.pack(fill="both", expand=True)
-        br_body.grid_columnconfigure(0, weight=5)  # Khung trình duyệt nhúng
-        br_body.grid_columnconfigure(1, weight=5)  # Khung danh sách quét được
+        br_body.grid_columnconfigure(0, weight=5)  # Trình duyệt web nhúng
+        br_body.grid_columnconfigure(1, weight=5)  # Danh sách video quét được
         br_body.grid_rowconfigure(0, weight=1)
 
-        # Nửa Trái: Khung Trình Duyệt Web Nhúng (Edge WebView2 Frame)
-        self.browser_host_card = ctk.CTkFrame(br_body, corner_radius=10, fg_color=("#0F172A", "#0F172A"))
+        # Nửa Trái: Khung Trình Duyệt Web Native (HtmlFrame)
+        self.browser_host_card = ctk.CTkFrame(br_body, corner_radius=10, fg_color=("#F8FAFC", "#0F172A"), border_width=1, border_color=("#E2E8F0", "#334155"))
         self.browser_host_card.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
 
-        # Tkinter native frame để nhúng HWND
-        self.tk_browser_frame = tk.Frame(self.browser_host_card, bg="#0F172A")
-        self.tk_browser_frame.pack(fill="both", expand=True, padx=4, pady=4)
+        if HtmlFrame:
+            try:
+                self.html_browser = HtmlFrame(self.browser_host_card, messages_enabled=False)
+                self.html_browser.pack(fill="both", expand=True, padx=2, pady=2)
+            except Exception as e:
+                self.log(f"[Trình duyệt] Lỗi khởi tạo HtmlFrame: {e}")
+                ctk.CTkLabel(self.browser_host_card, text=f"Lỗi tải trình duyệt: {e}", font=("Segoe UI", 11)).pack(pady=40)
+        else:
+            ctk.CTkLabel(self.browser_host_card, text="Thư viện tkinterweb chưa sẵn sàng.", font=("Segoe UI", 11)).pack(pady=40)
 
         # Nửa Phải: Danh sách video quét được kèm Thumbnail đầy đủ
         res_card = ctk.CTkFrame(br_body, corner_radius=10)
@@ -554,65 +579,66 @@ class DownloadView(ctk.CTkFrame):
         self.browser_res_scroll = ctk.CTkScrollableFrame(res_card, fg_color="transparent")
         self.browser_res_scroll.pack(fill="both", expand=True, padx=4, pady=4)
 
-        self.browser_empty_lbl = ctk.CTkLabel(self.browser_res_scroll, text="💡 Duyệt web bên trái hoặc bấm 'QUÉT VIDEO TRÊN TRANG' để lấy danh sách đầy đủ video kèm Thumbnail", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"), wraplength=280)
+        self.browser_empty_lbl = ctk.CTkLabel(self.browser_res_scroll, text="💡 Nhập URL / lướt web bên trái và bấm 'QUÉT VIDEO TRANG NÀY' để trích xuất đầy đủ video kèm Thumbnail", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8"), wraplength=280)
         self.browser_empty_lbl.pack(pady=40)
 
-    def on_launch_embedded_browser_frame(self):
-        """Khởi chạy trình duyệt Edge WebView2 nhúng trực tiếp vào khung Frame."""
-        self.update_idletasks()
-        hwnd = self.tk_browser_frame.winfo_id()
-        w = max(400, self.tk_browser_frame.winfo_width())
-        h = max(350, self.tk_browser_frame.winfo_height())
+    def load_url_into_browser(self, url: str):
+        """Nạp website vào trình duyệt web nhúng trong GUI."""
+        if not self.html_browser:
+            return
+        if not url.startswith("http"):
+            url = "https://" + url
 
-        raw_url = self.universal_entry.get().strip()
-        target_url = raw_url if URLDetector.is_valid_url(raw_url) else "https://www.youtube.com"
+        self.browser_address_entry.delete(0, "end")
+        self.browser_address_entry.insert(0, url)
+        self.log(f"[Trình duyệt GUI] Đang tải trang: {url}")
 
-        if self.embedded_browser_proc:
+        def _load():
             try:
-                self.embedded_browser_proc.terminate()
+                self.html_browser.load_website(url)
+            except Exception as e:
+                self.log(f"[Trình duyệt GUI] Không thể tải trang trực tiếp: {e}")
+
+        threading.Thread(target=_load, daemon=True).start()
+
+    def on_browser_navigate(self):
+        target = self.browser_address_entry.get().strip()
+        if target:
+            if not URLDetector.is_valid_url(target) and "." not in target:
+                target = f"https://www.google.com/search?q={target}"
+            self.load_url_into_browser(target)
+
+    def on_browser_reload(self):
+        if self.html_browser:
+            try:
+                self.html_browser.reload()
             except Exception:
                 pass
-
-        self.log(f"[Trình duyệt nhúng] Đang gắn WebView2 vào GUI: {target_url}")
-        
-        try:
-            if getattr(sys, 'frozen', False):
-                self.embedded_browser_proc = subprocess.Popen([sys.executable, "--embedded-browser", str(hwnd), target_url, str(w), str(h)])
-            else:
-                script_path = str(self.tool_dir / "embedded_browser.py")
-                self.embedded_browser_proc = subprocess.Popen([sys.executable, script_path, str(hwnd), target_url, str(w), str(h)])
-        except Exception as e:
-            self.log(f"[Trình duyệt nhúng] Lỗi: {e}")
-
-    def get_current_active_url(self) -> str:
-        """Lấy URL đang mở hiện tại trong trình duyệt nhúng hoặc ô nhập liệu."""
-        if self.url_sync_file.exists():
-            try:
-                with open(self.url_sync_file, "r", encoding="utf-8") as f:
-                    u = f.read().strip()
-                    if u and URLDetector.is_valid_url(u):
-                        return u
-            except Exception:
-                pass
-
-        u_entry = self.universal_entry.get().strip()
-        if URLDetector.is_valid_url(u_entry):
-            return u_entry
-        return "https://www.youtube.com"
 
     def on_scan_current_browser_url(self):
         """Quét toàn bộ video có trên trang web đang duyệt."""
-        current_url = self.get_current_active_url()
-        self.log(f"[Quét trang hiện tại] Bắt đầu quét URL: {current_url}")
+        current_url = self.browser_address_entry.get().strip()
+        if not current_url or not URLDetector.is_valid_url(current_url):
+            if self.html_browser and hasattr(self.html_browser, 'current_url') and self.html_browser.current_url:
+                current_url = self.html_browser.current_url
+            else:
+                current_url = "https://www.youtube.com"
+
+        self.log(f"[Quét trang hiện tại] Bắt đầu quét: {current_url}")
         self.browser_search_worker(current_url, is_keyword=False)
 
     def on_download_current_browser_video(self):
         """Tải video đang xem hiện tại trong trình duyệt."""
-        current_url = self.get_current_active_url()
-        self.show_single_mode()
-        self.universal_entry.delete(0, "end")
-        self.universal_entry.insert(0, current_url)
-        self.start_analyze_single_url(current_url)
+        current_url = self.browser_address_entry.get().strip()
+        if not current_url or not URLDetector.is_valid_url(current_url):
+            if self.html_browser and hasattr(self.html_browser, 'current_url') and self.html_browser.current_url:
+                current_url = self.html_browser.current_url
+
+        if current_url:
+            self.show_single_mode()
+            self.universal_entry.delete(0, "end")
+            self.universal_entry.insert(0, current_url)
+            self.start_analyze_single_url(current_url)
 
     def browser_search_worker(self, query: str, is_keyword: bool = False):
         self.browser_res_count_lbl.configure(text="Đang phân tích...")

@@ -56,6 +56,8 @@ def run_pyinstaller():
         "--collect-all=curl_cffi",
         "--collect-all=PIL",
         "--collect-all=webview",
+        "--collect-all=tkinterweb",
+        "--collect-all=tkinterweb_tkhtml",
         "--hidden-import=tool_gui",
         "--hidden-import=tool_gui.license_manager",
         "--hidden-import=tool_gui.updater",
