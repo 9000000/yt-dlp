@@ -1,13 +1,12 @@
 """
 Màn hình Tải Video Hàng Loạt & Danh Sách Phát (Batch & Playlist View).
-Hỗ trợ tải nhiều link cùng lúc hoặc toàn bộ Playlist với cột hiển thị Cookie riêng biệt 100% Tiếng Việt.
+Hỗ trợ tải nhiều link cùng lúc hoặc toàn bộ Playlist với các cột hiển thị Tiêu đề, Thời lượng, URL và Trạng thái riêng biệt 100% Tiếng Việt.
 """
 
 import os
 import threading
 import customtkinter as ctk
 import tkinter.messagebox as msgbox
-from tkinter import filedialog
 from pathlib import Path
 
 from tool_gui.downloader import DownloadTask
@@ -22,7 +21,7 @@ class BatchView(ctk.CTkFrame):
         self.config_manager = config_manager
         self.log_callback = log_callback
 
-        self.queue_items = []  # list of {url, status, cookie_src, status_lbl}
+        self.queue_items = []  # list of {url, title_lbl, duration_lbl, status_lbl, status}
         self.is_running = False
         self.current_index = 0
 
@@ -37,67 +36,7 @@ class BatchView(ctk.CTkFrame):
         self.scroll.pack(fill="both", expand=True, padx=20, pady=15)
 
         # =========================================================================
-        # 1. KHUNG CHỌN COOKIE TRÊN CÙNG (TOP COOKIE BAR)
-        # =========================================================================
-        cookie_card = ctk.CTkFrame(self.scroll, corner_radius=12, fg_color=("#F1F5F9", "#1E293B"))
-        cookie_card.pack(fill="x", pady=(0, 12), padx=5)
-
-        cookie_inner = ctk.CTkFrame(cookie_card, fg_color="transparent")
-        cookie_inner.pack(fill="x", padx=15, pady=10)
-
-        lbl_cookie = ctk.CTkLabel(
-            cookie_inner,
-            text="🍪 Nguồn Cookie xác thực (Áp dụng cho tải hàng loạt):",
-            font=("Segoe UI", 12, "bold"),
-            text_color=("#2563EB", "#60A5FA")
-        )
-        lbl_cookie.pack(side="left", padx=(0, 10))
-
-        self.cookie_browser_combo = ctk.CTkComboBox(
-            cookie_inner,
-            values=[
-                "🌐 Không dùng Cookie (Mặc định)",
-                "🌐 Google Chrome",
-                "🌐 Microsoft Edge",
-                "🌐 Mozilla Firefox",
-                "🌐 Brave Browser",
-                "🌐 Opera",
-                "📁 Tệp Cookie riêng (.txt)"
-            ],
-            width=220,
-            height=32,
-            command=self.on_cookie_browser_changed
-        )
-        self.cookie_browser_combo.pack(side="left", padx=(0, 10))
-
-        saved_cookie = self.config_manager.get("browser_cookie", "none")
-        cookie_map_rev = {
-            "none": "🌐 Không dùng Cookie (Mặc định)",
-            "chrome": "🌐 Google Chrome",
-            "edge": "🌐 Microsoft Edge",
-            "firefox": "🌐 Mozilla Firefox",
-            "brave": "🌐 Brave Browser",
-            "opera": "🌐 Opera",
-            "file": "📁 Tệp Cookie riêng (.txt)"
-        }
-        self.cookie_browser_combo.set(cookie_map_rev.get(saved_cookie, "🌐 Không dùng Cookie (Mặc định)"))
-
-        self.cookie_file_btn = ctk.CTkButton(
-            cookie_inner,
-            text="📂 Chọn file cookies.txt",
-            width=150,
-            height=32,
-            command=self.on_browse_cookie_file,
-            fg_color="#475569",
-            hover_color="#334155",
-            font=("Segoe UI", 11)
-        )
-        self.cookie_file_btn.pack(side="left")
-        if saved_cookie != "file":
-            self.cookie_file_btn.pack_forget()
-
-        # =========================================================================
-        # 2. KHUNG NHẬP DANH SÁCH URL (BATCH INPUT CARD)
+        # 1. KHUNG NHẬP DANH SÁCH URL (BATCH INPUT CARD)
         # =========================================================================
         input_card = ctk.CTkFrame(self.scroll, corner_radius=12)
         input_card.pack(fill="x", pady=(0, 15), padx=5)
@@ -144,7 +83,7 @@ class BatchView(ctk.CTkFrame):
         paste_btn.grid(row=0, column=2, padx=5, sticky="ew")
 
         # =========================================================================
-        # 3. KHUNG TIẾN TRÌNH & NÚT ĐIỀU KHIỂN
+        # 2. KHUNG TIẾN TRÌNH & NÚT ĐIỀU KHIỂN
         # =========================================================================
         ctrl_card = ctk.CTkFrame(self.scroll, corner_radius=12)
         ctrl_card.pack(fill="x", pady=(0, 15), padx=5)
@@ -183,61 +122,26 @@ class BatchView(ctk.CTkFrame):
         self.clear_btn.pack(side="right")
 
         # =========================================================================
-        # 4. KHUNG BẢNG HÀNG ĐỢI VỚI CỘT COOKIE RIÊNG (QUEUE TABLE)
+        # 3. KHUNG BẢNG HÀNG ĐỢI VỚI CỘT HIỂN THỊ CHI TIẾT RIÊNG (QUEUE TABLE)
         # =========================================================================
         self.queue_card = ctk.CTkFrame(self.scroll, corner_radius=12)
         self.queue_card.pack(fill="both", expand=True, pady=(0, 10), padx=5)
 
-        q_title = ctk.CTkLabel(self.queue_card, text="📑 Danh sách video hàng đợi (kèm thông tin Cookie xác thực):", font=("Segoe UI", 13, "bold"))
+        q_title = ctk.CTkLabel(self.queue_card, text="📑 Danh sách video hàng đợi (kèm cột Tiêu đề & Thời lượng riêng):", font=("Segoe UI", 13, "bold"))
         q_title.pack(anchor="w", padx=15, pady=(12, 6))
 
-        # Tiêu đề các cột
-        tbl_header = ctk.CTkFrame(self.queue_card, fg_color=("#CBD5E1", "#334155"), corner_radius=6, height=30)
+        # Tiêu đề các cột trong bảng
+        tbl_header = ctk.CTkFrame(self.queue_card, fg_color=("#CBD5E1", "#334155"), corner_radius=6, height=32)
         tbl_header.pack(fill="x", padx=15, pady=(0, 6))
 
         ctk.CTkLabel(tbl_header, text="STT", width=45, font=("Segoe UI", 11, "bold")).pack(side="left", padx=5)
-        ctk.CTkLabel(tbl_header, text="Đường dẫn URL", anchor="w", font=("Segoe UI", 11, "bold")).pack(side="left", fill="x", expand=True, padx=5)
-        ctk.CTkLabel(tbl_header, text="🍪 Nguồn Cookie", width=140, font=("Segoe UI", 11, "bold")).pack(side="left", padx=5)
+        ctk.CTkLabel(tbl_header, text="🎬 Tiêu đề Video", anchor="w", width=260, font=("Segoe UI", 11, "bold")).pack(side="left", padx=5)
+        ctk.CTkLabel(tbl_header, text="⏱️ Thời lượng", width=90, font=("Segoe UI", 11, "bold")).pack(side="left", padx=5)
+        ctk.CTkLabel(tbl_header, text="🔗 Đường dẫn URL", anchor="w", font=("Segoe UI", 11, "bold")).pack(side="left", fill="x", expand=True, padx=5)
         ctk.CTkLabel(tbl_header, text="Trạng thái", width=120, font=("Segoe UI", 11, "bold")).pack(side="right", padx=10)
 
         self.queue_frame = ctk.CTkFrame(self.queue_card, fg_color="transparent")
         self.queue_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
-
-    def on_cookie_browser_changed(self, value):
-        """Xử lý thay đổi nguồn Cookie."""
-        val_map = {
-            "🌐 Không dùng Cookie (Mặc định)": "none",
-            "🌐 Google Chrome": "chrome",
-            "🌐 Microsoft Edge": "edge",
-            "🌐 Mozilla Firefox": "firefox",
-            "🌐 Brave Browser": "brave",
-            "🌐 Opera": "opera",
-            "📁 Tệp Cookie riêng (.txt)": "file"
-        }
-        key = val_map.get(value, "none")
-        self.config_manager.set("browser_cookie", key)
-
-        if key == "file":
-            self.cookie_file_btn.pack(side="left")
-            if not self.config_manager.get("cookie_file_path"):
-                self.on_browse_cookie_file()
-        else:
-            self.cookie_file_btn.pack_forget()
-
-        self.log(f"[Tải hàng loạt] Đã chuyển nguồn Cookie sang: {value}")
-
-    def on_browse_cookie_file(self):
-        """Mở hộp thoại chọn tệp cookie .txt."""
-        fpath = filedialog.askopenfilename(
-            title="Chọn tệp cookies.txt",
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
-        )
-        if fpath:
-            self.config_manager.set("cookie_file_path", fpath)
-            self.config_manager.set("browser_cookie", "file")
-            fname = Path(fpath).name
-            self.cookie_file_btn.configure(text=f"📄 {fname}")
-            self.log(f"[Cookie] Đã nạp tệp Cookie: {fpath}")
 
     def on_paste_all(self):
         """Dán văn bản từ clipboard."""
@@ -275,27 +179,9 @@ class BatchView(ctk.CTkFrame):
             msgbox.showwarning("Cảnh báo", "Vui lòng nhập ít nhất một đường dẫn hợp lệ!")
             return
 
-        # Dọn dẹp giao diện hàng đợi
         for widget in self.queue_frame.winfo_children():
             widget.destroy()
         self.queue_items.clear()
-
-        # Lấy nhãn nguồn cookie hiện tại
-        active_cookie_label = self.cookie_browser_combo.get()
-        if "Chrome" in active_cookie_label:
-            cookie_badge_txt = "Chrome"
-        elif "Edge" in active_cookie_label:
-            cookie_badge_txt = "Edge"
-        elif "Firefox" in active_cookie_label:
-            cookie_badge_txt = "Firefox"
-        elif "Brave" in active_cookie_label:
-            cookie_badge_txt = "Brave"
-        elif "Opera" in active_cookie_label:
-            cookie_badge_txt = "Opera"
-        elif "Tệp" in active_cookie_label:
-            cookie_badge_txt = "Tệp .txt"
-        else:
-            cookie_badge_txt = "Chuẩn (Không)"
 
         for idx, url in enumerate(lines):
             row_frame = ctk.CTkFrame(self.queue_frame, fg_color=("#E2E8F0", "#1E293B"), corner_radius=8)
@@ -304,27 +190,23 @@ class BatchView(ctk.CTkFrame):
             idx_lbl = ctk.CTkLabel(row_frame, text=f"#{idx+1}", width=45, font=("Segoe UI", 11, "bold"))
             idx_lbl.pack(side="left", padx=5)
 
-            url_lbl = ctk.CTkLabel(row_frame, text=url, anchor="w", font=("Segoe UI", 11))
-            url_lbl.pack(side="left", fill="x", expand=True, padx=5)
+            title_lbl = ctk.CTkLabel(row_frame, text="Đang chờ phân tích...", width=260, anchor="w", font=("Segoe UI", 11, "bold"))
+            title_lbl.pack(side="left", padx=5)
 
-            cookie_lbl = ctk.CTkLabel(
-                row_frame,
-                text=cookie_badge_txt,
-                width=140,
-                font=("Segoe UI", 10, "bold"),
-                fg_color=("#CBD5E1", "#334155"),
-                corner_radius=6,
-                height=22
-            )
-            cookie_lbl.pack(side="left", padx=5)
+            dur_lbl = ctk.CTkLabel(row_frame, text="--:--", width=90, font=("Segoe UI", 11), text_color=("#64748B", "#94A3B8"))
+            dur_lbl.pack(side="left", padx=5)
+
+            url_lbl = ctk.CTkLabel(row_frame, text=url, anchor="w", font=("Segoe UI", 10), text_color=("#475569", "#94A3B8"))
+            url_lbl.pack(side="left", fill="x", expand=True, padx=5)
 
             status_lbl = ctk.CTkLabel(row_frame, text="🕒 Chờ tải", width=120, font=("Segoe UI", 11, "bold"), text_color="#64748B")
             status_lbl.pack(side="right", padx=10)
 
             self.queue_items.append({
                 "url": url,
+                "title_lbl": title_lbl,
+                "dur_lbl": dur_lbl,
                 "status_lbl": status_lbl,
-                "cookie_lbl": cookie_lbl,
                 "status": "pending"
             })
 
@@ -360,13 +242,27 @@ class BatchView(ctk.CTkFrame):
 
             self.current_index = idx
             url = item["url"]
+            title_lbl = item["title_lbl"]
+            dur_lbl = item["dur_lbl"]
             status_lbl = item["status_lbl"]
 
+            # Phân tích nhanh metadata
             self.after(0, lambda sl=status_lbl, i=idx: (
-                sl.configure(text="⏳ Đang tải...", text_color="#3B82F6"),
-                self.total_prog_lbl.configure(text=f"Đang tải mục {i+1}/{total}..."),
+                sl.configure(text="🔍 Đang lấy thông tin...", text_color="#3B82F6"),
+                self.total_prog_lbl.configure(text=f"Đang xử lý mục {i+1}/{total}..."),
                 self.total_bar.set(i / total)
             ))
+
+            ok, meta, _ = URLDetector.fetch_metadata(url, cookie_browser=cookie_browser, cookie_file=cookie_file)
+            if ok and meta:
+                v_title = meta.get("title", url)
+                v_dur = meta.get("duration_str", "--:--")
+                self.after(0, lambda tl=title_lbl, dl=dur_lbl, t=v_title, d=v_dur: (
+                    tl.configure(text=t[:35] + "..." if len(t) > 35 else t),
+                    dl.configure(text=d)
+                ))
+
+            self.after(0, lambda sl=status_lbl: sl.configure(text="⏳ Đang tải...", text_color="#3B82F6"))
 
             finished_event = threading.Event()
             success_box = [False]

@@ -1,6 +1,7 @@
 """
 Màn hình Tải Video Đơn (Download View).
-Tự động nhận diện URL, bộ chọn Cookie đặt ngay trên cùng, metadata preview và bộ chọn chất lượng đa dạng 100% Tiếng Việt.
+Tự động nhận diện URL, ô hiển thị Video đã phân tích xong đặt nổi bật ngay trên cùng, 
+kèm bộ chọn chất lượng đa dạng (8K/4K/1080p60/MP3 320k) 100% Tiếng Việt.
 """
 
 import os
@@ -17,7 +18,7 @@ from tool_gui.downloader import DownloadTask
 from tool_gui.config import ConfigManager
 
 class DownloadView(ctk.CTkFrame):
-    """Giao diện tải video chính."""
+    """Giao diện tải video đơn."""
 
     def __init__(self, master, config_manager: ConfigManager, log_callback=None, **kwargs):
         super().__init__(master, **kwargs)
@@ -40,68 +41,7 @@ class DownloadView(ctk.CTkFrame):
         self.scroll.pack(fill="both", expand=True, padx=20, pady=15)
 
         # =========================================================================
-        # 1. KHUNG CHỌN COOKIE / XÁC THỰC TRÊN CÙNG (TOP COOKIE BAR)
-        # =========================================================================
-        cookie_card = ctk.CTkFrame(self.scroll, corner_radius=12, fg_color=("#F1F5F9", "#1E293B"))
-        cookie_card.pack(fill="x", pady=(0, 12), padx=5)
-
-        cookie_inner = ctk.CTkFrame(cookie_card, fg_color="transparent")
-        cookie_inner.pack(fill="x", padx=15, pady=10)
-
-        lbl_cookie = ctk.CTkLabel(
-            cookie_inner,
-            text="🍪 Nguồn Cookie xác thực (Dành cho Facebook / Video riêng tư):",
-            font=("Segoe UI", 12, "bold"),
-            text_color=("#2563EB", "#60A5FA")
-        )
-        lbl_cookie.pack(side="left", padx=(0, 10))
-
-        self.cookie_browser_combo = ctk.CTkComboBox(
-            cookie_inner,
-            values=[
-                "🌐 Không dùng Cookie (Mặc định)",
-                "🌐 Google Chrome",
-                "🌐 Microsoft Edge",
-                "🌐 Mozilla Firefox",
-                "🌐 Brave Browser",
-                "🌐 Opera",
-                "📁 Tệp Cookie riêng (.txt)"
-            ],
-            width=220,
-            height=32,
-            command=self.on_cookie_browser_changed
-        )
-        self.cookie_browser_combo.pack(side="left", padx=(0, 10))
-
-        # Khởi tạo giá trị cookie từ config
-        saved_cookie = self.config_manager.get("browser_cookie", "none")
-        cookie_map_rev = {
-            "none": "🌐 Không dùng Cookie (Mặc định)",
-            "chrome": "🌐 Google Chrome",
-            "edge": "🌐 Microsoft Edge",
-            "firefox": "🌐 Mozilla Firefox",
-            "brave": "🌐 Brave Browser",
-            "opera": "🌐 Opera",
-            "file": "📁 Tệp Cookie riêng (.txt)"
-        }
-        self.cookie_browser_combo.set(cookie_map_rev.get(saved_cookie, "🌐 Không dùng Cookie (Mặc định)"))
-
-        self.cookie_file_btn = ctk.CTkButton(
-            cookie_inner,
-            text="📂 Chọn file cookies.txt",
-            width=150,
-            height=32,
-            command=self.on_browse_cookie_file,
-            fg_color="#475569",
-            hover_color="#334155",
-            font=("Segoe UI", 11)
-        )
-        self.cookie_file_btn.pack(side="left")
-        if saved_cookie != "file":
-            self.cookie_file_btn.pack_forget()
-
-        # =========================================================================
-        # 2. KHUNG NHẬP LIÊN KẾT (URL INPUT CARD)
+        # 1. KHUNG NHẬP LIÊN KẾT (URL INPUT CARD)
         # =========================================================================
         input_card = ctk.CTkFrame(self.scroll, corner_radius=12)
         input_card.pack(fill="x", pady=(0, 15), padx=5)
@@ -146,56 +86,97 @@ class DownloadView(ctk.CTkFrame):
         self.analyze_btn.pack(side="left")
 
         # =========================================================================
-        # 3. KHUNG THÔNG TIN PREVIEW VIDEO (METADATA CARD)
+        # 2. Ô HIỂN THỊ VIDEO ĐÃ PHÂN TÍCH XONG (ANALYZED VIDEO DISPLAY BOX - TRÊN CÙNG)
         # =========================================================================
-        self.meta_card = ctk.CTkFrame(self.scroll, corner_radius=12)
-        self.meta_card.pack(fill="x", pady=(0, 15), padx=5)
-        self.meta_card.pack_forget()
+        self.preview_card = ctk.CTkFrame(self.scroll, corner_radius=12, fg_color=("#F8FAFC", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
+        self.preview_card.pack(fill="x", pady=(0, 15), padx=5)
 
-        meta_inner = ctk.CTkFrame(self.meta_card, fg_color="transparent")
-        meta_inner.pack(fill="x", padx=15, pady=15)
+        preview_header = ctk.CTkFrame(self.preview_card, fg_color="transparent")
+        preview_header.pack(fill="x", padx=15, pady=(10, 4))
 
-        self.thumb_label = ctk.CTkLabel(meta_inner, text="", width=180, height=101, corner_radius=8, fg_color=("#E2E8F0", "#1E293B"))
+        lbl_pv = ctk.CTkLabel(preview_header, text="🎬 Thông tin Video đã phân tích:", font=("Segoe UI", 13, "bold"), text_color=("#2563EB", "#60A5FA"))
+        lbl_pv.pack(side="left")
+
+        self.status_badge = ctk.CTkLabel(
+            preview_header,
+            text="Chờ phân tích URL...",
+            font=("Segoe UI", 11, "bold"),
+            fg_color=("#E2E8F0", "#334155"),
+            corner_radius=6,
+            height=22,
+            padx=8
+        )
+        self.status_badge.pack(side="right")
+
+        meta_inner = ctk.CTkFrame(self.preview_card, fg_color="transparent")
+        meta_inner.pack(fill="x", padx=15, pady=(4, 15))
+
+        # Khung ảnh Thumbnail bên trái
+        self.thumb_label = ctk.CTkLabel(
+            meta_inner,
+            text="🖼️ Chưa có Video",
+            width=190,
+            height=107,
+            corner_radius=8,
+            fg_color=("#E2E8F0", "#0F172A"),
+            font=("Segoe UI", 11)
+        )
         self.thumb_label.pack(side="left", padx=(0, 15))
 
+        # Cột thông tin chi tiết bên phải
         info_col = ctk.CTkFrame(meta_inner, fg_color="transparent")
         info_col.pack(side="left", fill="both", expand=True)
 
+        badge_row = ctk.CTkFrame(info_col, fg_color="transparent")
+        badge_row.pack(anchor="w", fill="x", pady=(0, 4))
+
         self.platform_badge = ctk.CTkLabel(
-            info_col,
-            text="YouTube",
-            fg_color="#EF4444",
+            badge_row,
+            text="Đa nền tảng",
+            fg_color="#64748B",
             text_color="white",
             corner_radius=6,
             font=("Segoe UI", 10, "bold"),
-            width=80,
+            width=85,
             height=20
         )
-        self.platform_badge.pack(anchor="w", pady=(0, 4))
+        self.platform_badge.pack(side="left", padx=(0, 8))
+
+        self.type_badge = ctk.CTkLabel(
+            badge_row,
+            text="Video Đơn",
+            fg_color=("#E2E8F0", "#334155"),
+            corner_radius=6,
+            font=("Segoe UI", 10),
+            height=20,
+            padx=6
+        )
+        self.type_badge.pack(side="left")
 
         self.title_label = ctk.CTkLabel(
             info_col,
-            text="Tiêu đề video",
-            font=("Segoe UI", 14, "bold"),
+            text="Vui lòng nhập link và bấm 'Phân tích' để xem thông tin chi tiết video tại đây",
+            font=("Segoe UI", 13, "bold"),
             anchor="w",
             justify="left",
-            wraplength=480
+            wraplength=520,
+            text_color=("#1E293B", "#F8FAFC")
         )
         self.title_label.pack(anchor="w", fill="x", pady=(0, 4))
 
-        self.author_label = ctk.CTkLabel(info_col, text="Kênh: --", font=("Segoe UI", 11), text_color=("#64748B", "#94A3B8"), anchor="w")
+        self.author_label = ctk.CTkLabel(info_col, text="👤 Tác giả/Kênh: --", font=("Segoe UI", 11), text_color=("#64748B", "#94A3B8"), anchor="w")
         self.author_label.pack(anchor="w", pady=(0, 2))
 
-        self.duration_label = ctk.CTkLabel(info_col, text="Thời lượng: --", font=("Segoe UI", 11), text_color=("#64748B", "#94A3B8"), anchor="w")
+        self.duration_label = ctk.CTkLabel(info_col, text="⏱️ Thời lượng: --", font=("Segoe UI", 11), text_color=("#64748B", "#94A3B8"), anchor="w")
         self.duration_label.pack(anchor="w")
 
         # =========================================================================
-        # 4. KHUNG TÙY CHỌN CHẤT LƯỢNG & ĐỊNH DẠNG (EXPANDED OPTIONS CARD)
+        # 3. KHUNG TÙY CHỌN CHẤT LƯỢNG & ĐỊNH DẠNG (EXPANDED OPTIONS CARD)
         # =========================================================================
         opt_card = ctk.CTkFrame(self.scroll, corner_radius=12)
         opt_card.pack(fill="x", pady=(0, 15), padx=5)
 
-        lbl_opt = ctk.CTkLabel(opt_card, text="⚙️ Cài đặt định dạng & chất lượng chi tiết:", font=("Segoe UI", 13, "bold"))
+        lbl_opt = ctk.CTkLabel(opt_card, text="⚙️ Cài đặt định dạng & chất lượng xuất:", font=("Segoe UI", 13, "bold"))
         lbl_opt.pack(anchor="w", padx=15, pady=(12, 8))
 
         opt_grid = ctk.CTkFrame(opt_card, fg_color="transparent")
@@ -316,7 +297,7 @@ class DownloadView(ctk.CTkFrame):
         browse_btn.pack(side="right")
 
         # =========================================================================
-        # 5. KHUNG TIẾN TRÌNH & NÚT BẮT ĐẦU TẢI (ACTION & PROGRESS CARD)
+        # 4. KHUNG TIẾN TRÌNH & NÚT BẮT ĐẦU TẢI (ACTION & PROGRESS CARD)
         # =========================================================================
         action_card = ctk.CTkFrame(self.scroll, corner_radius=12)
         action_card.pack(fill="x", pady=(0, 15), padx=5)
@@ -358,42 +339,6 @@ class DownloadView(ctk.CTkFrame):
             corner_radius=8
         )
         self.open_folder_btn.pack(side="right")
-
-    def on_cookie_browser_changed(self, value):
-        """Xử lý thay đổi nguồn Cookie."""
-        val_map = {
-            "🌐 Không dùng Cookie (Mặc định)": "none",
-            "🌐 Google Chrome": "chrome",
-            "🌐 Microsoft Edge": "edge",
-            "🌐 Mozilla Firefox": "firefox",
-            "🌐 Brave Browser": "brave",
-            "🌐 Opera": "opera",
-            "📁 Tệp Cookie riêng (.txt)": "file"
-        }
-        key = val_map.get(value, "none")
-        self.config_manager.set("browser_cookie", key)
-
-        if key == "file":
-            self.cookie_file_btn.pack(side="left")
-            if not self.config_manager.get("cookie_file_path"):
-                self.on_browse_cookie_file()
-        else:
-            self.cookie_file_btn.pack_forget()
-
-        self.log(f"[Cài đặt] Đã chuyển nguồn Cookie sang: {value}")
-
-    def on_browse_cookie_file(self):
-        """Mở hộp thoại chọn tệp cookie .txt."""
-        fpath = filedialog.askopenfilename(
-            title="Chọn tệp cookies.txt (Netscape format)",
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
-        )
-        if fpath:
-            self.config_manager.set("cookie_file_path", fpath)
-            self.config_manager.set("browser_cookie", "file")
-            fname = Path(fpath).name
-            self.cookie_file_btn.configure(text=f"📄 {fname}")
-            self.log(f"[Cookie] Đã chọn tệp Cookie: {fpath}")
 
     def on_mode_changed(self, value):
         """Chuyển đổi giữa chế độ Video và Audio."""
@@ -441,6 +386,7 @@ class DownloadView(ctk.CTkFrame):
             return
 
         self.analyze_btn.configure(state="disabled", text="⏳ Đang phân tích...")
+        self.status_badge.configure(text="⏳ Đang phân tích dữ liệu...", fg_color="#3B82F6", text_color="white")
         plat = URLDetector.detect_platform(url)
         self.prog_label.configure(text=f"Đang phân tích liên kết {plat}...")
         self.log(f"[Phân tích] Bắt đầu phân tích URL: {url}")
@@ -456,7 +402,7 @@ class DownloadView(ctk.CTkFrame):
         if success and meta:
             thumb_img = None
             if meta.get("thumbnail_url"):
-                thumb_img = URLDetector.load_thumbnail_image(meta["thumbnail_url"])
+                thumb_img = URLDetector.load_thumbnail_image(meta["thumbnail_url"], size=(190, 107))
 
             self.after(0, lambda: self._apply_metadata(meta, thumb_img))
         else:
@@ -466,7 +412,7 @@ class DownloadView(ctk.CTkFrame):
         """Cập nhật giao diện sau khi phân tích thành công."""
         self.current_meta = meta
         self.analyze_btn.configure(state="normal", text="🔍 Phân tích")
-        self.meta_card.pack(fill="x", pady=(0, 15), padx=5)
+        self.status_badge.configure(text="✅ Phân tích thành công", fg_color="#10B981", text_color="white")
 
         self.title_label.configure(text=meta.get("title", ""))
         self.author_label.configure(text=f"👤 Tác giả/Kênh: {meta.get('uploader', 'Không rõ')}")
@@ -483,8 +429,12 @@ class DownloadView(ctk.CTkFrame):
         }
         self.platform_badge.configure(text=plat, fg_color=badge_colors.get(plat, "#64748B"))
 
+        is_pl = meta.get("is_playlist", False)
+        pl_cnt = meta.get("playlist_count", 1)
+        self.type_badge.configure(text=f"Danh sách phát ({pl_cnt} video)" if is_pl else "Video Đơn")
+
         if thumb_img:
-            ctk_img = ctk.CTkImage(light_image=thumb_img, dark_image=thumb_img, size=(180, 101))
+            ctk_img = ctk.CTkImage(light_image=thumb_img, dark_image=thumb_img, size=(190, 107))
             self.thumb_label.configure(image=ctk_img, text="")
         else:
             self.thumb_label.configure(image=None, text="🖼️ Không có ảnh")
@@ -500,6 +450,7 @@ class DownloadView(ctk.CTkFrame):
     def _handle_analyze_error(self, err_msg: str):
         """Xử lý khi phân tích gặp lỗi."""
         self.analyze_btn.configure(state="normal", text="🔍 Phân tích")
+        self.status_badge.configure(text="❌ Phân tích thất bại", fg_color="#EF4444", text_color="white")
         self.prog_label.configure(text=f"❌ {err_msg}")
         self.log(f"[Phân tích] Thất bại: {err_msg}")
         msgbox.showerror("Thông báo", err_msg)
