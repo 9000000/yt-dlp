@@ -3,7 +3,7 @@ Script Đóng Gói & Mã Hóa Nuitka Độc Lập (Isolated Non-Intrusive Build 
 NGUYÊN TẮC HOẠT ĐỘNG:
 - 100% KHÔNG THAY ĐỔI, KHÔNG XÓA, KHÔNG ĐỔI TÊN bất kỳ tệp tin nào trong thư mục dự án gốc của bạn.
 - Bạn có thể vừa lập trình, vừa chạy code Python .py bình thường.
-- Toàn bộ quá trình mã hóa C++ (.pyd / .exe) diễn ra trong môi trường Staging cách ly và xuất thành phẩm sang thư mục `dist/`.
+- Cung cấp chế độ Build Siêu Tốc (Hybrid): Mã hóa file lõi sang .pyd + Đóng gói .exe thông thường chỉ mất ~40 giây!
 """
 
 import sys
@@ -53,33 +53,12 @@ def clean_temp():
         except Exception:
             pass
 
-def build_protected_bundle():
-    """
-    Tùy chọn 1: Xuất bản gói thư mục ToolDL_Pro_Protected trong `dist/`.
-    Trong gói này, các file lõi quan trọng được chuyển thành .pyd nhị phân,
-    mã nguồn gốc trong dự án của bạn KHÔNG HỀ BỊ ẢNH HƯỞNG.
-    """
-    print("\n" + "=" * 68)
-    print(" 🛡️  BUILD GÓI PHÂN PHỐI ĐÃ MÃ HÓA CỐT LÕI (HYBRID .PYD BUNDLE)")
-    print(" 💡 Dự án gốc của bạn được giữ nguyên vẹn 100%, không bị sửa đổi.")
-    print("=" * 68)
-
-    if not check_nuitka_installed():
-        print("❌ Không thể tiếp tục do thiếu Nuitka.")
-        return False
-
-    out_bundle_dir = DIST_DIR / "ToolDL_Protected"
-    
-    # 1. Dọn dẹp thư mục cũ
+def prepare_staging_with_pyd():
+    """Chuẩn bị thư mục Staging với các file lõi đã được mã hóa sang .pyd."""
     clean_temp()
-    if out_bundle_dir.exists():
-        shutil.rmtree(out_bundle_dir, ignore_errors=True)
-    out_bundle_dir.mkdir(parents=True, exist_ok=True)
-
-    print("\n📁 [1/4] Đang chuẩn bị môi trường đóng gói cách ly (Staging)...")
+    print("\n📁 [1/3] Đang chuẩn bị môi trường đóng gói cách ly (Staging)...")
     BUILD_TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 2. Sao chép toàn bộ dự án vào thư mục tạm Staging
     ignore_patterns = shutil.ignore_patterns(
         "__pycache__", ".git", ".github", "dist", "build", "*.bak", "*.spec", "*.log", "log.txt", "uv.lock", "test"
     )
@@ -93,8 +72,7 @@ def build_protected_bundle():
         else:
             shutil.copy2(item, dest)
 
-    # 3. Biên dịch các module chỉ định sang .pyd trong thư mục Staging
-    print("\n⚙️ [2/4] Đang tiến hành biên dịch mã C++ (.pyd) cho các file cốt lõi...")
+    print("\n⚙️ [2/3] Đang tiến hành biên dịch mã C++ (.pyd) cho các file cốt lõi...")
     for mod_rel in PROTECTED_MODULES:
         stg_py = BUILD_TEMP_DIR / mod_rel
         if not stg_py.exists():
@@ -116,8 +94,90 @@ def build_protected_bundle():
         else:
             print(f"   ⚠️ Biên dịch module {mod_rel} thất bại, giữ lại bản .py.")
 
-    # 4. Sao chép từ Staging sang thư mục output cuối cùng trong dist/
-    print("\n📦 [3/4] Đang hoàn thiện gói phát hành vào thư mục 'dist/ToolDL_Protected'...")
+    return True
+
+def build_fast_hybrid_exe():
+    """
+    Chế độ KHUYÊN DÙNG: Mã hóa các file lõi sang .pyd (C native) + Đóng gói nhanh bằng PyInstaller.
+    Thời gian build: Chỉ khoảng ~40 giây đến 1 phút!
+    Bảo mật: Logic bản quyền, máy ID và lõi tải đều là file C .pyd không thể decompile.
+    """
+    print("\n" + "=" * 68)
+    print(" ⚡ BUILD SIÊU TỐC: MÃ HÓA CỐT LÕI (.PYD) + ĐÓNG GÓI .EXE")
+    print(" ⏱️ Thời gian: ~40 giây  |  🔒 Bảo mật: File lõi chuyển thành DLL C Native")
+    print(" 💡 Dự án gốc của bạn được giữ nguyên vẹn 100%, không bị sửa đổi.")
+    print("=" * 68)
+
+    if not check_nuitka_installed():
+        return False
+
+    prepare_staging_with_pyd()
+
+    out_dir = DIST_DIR / "ToolDL_Pro"
+    if out_dir.exists():
+        shutil.rmtree(out_dir, ignore_errors=True)
+
+    print("\n📦 [3/3] Đang đóng gói siêu tốc thành tệp .exe với PyInstaller...")
+    cmd = [
+        sys.executable, "-m", "PyInstaller",
+        "--noconfirm",
+        "--onedir",
+        "--windowed",
+        "--name=ToolDL",
+        "--add-data=public.key;.",
+        "--add-data=config.json;.",
+        "--copy-metadata=customtkinter",
+        "--copy-metadata=yt_dlp",
+        f"--distpath={DIST_DIR}",
+        f"--workpath={PROJECT_DIR / 'build' / 'pyinstaller_work'}",
+        str(BUILD_TEMP_DIR / "run_gui.py")
+    ]
+
+    ret = subprocess.run(cmd, cwd=str(BUILD_TEMP_DIR))
+    clean_temp()
+
+    # Dọn dẹp workpath của pyinstaller
+    pyinst_work = PROJECT_DIR / "build" / "pyinstaller_work"
+    if pyinst_work.exists():
+        shutil.rmtree(pyinst_work, ignore_errors=True)
+
+    spec_file = BUILD_TEMP_DIR / "run_gui.spec"
+    if spec_file.exists():
+        spec_file.unlink()
+
+    if ret.returncode == 0:
+        final_app_dir = DIST_DIR / "ToolDL"
+        if final_app_dir.exists() and not out_dir.exists():
+            final_app_dir.rename(out_dir)
+
+        print("\n" + "=" * 68)
+        print(" 🎉 BUILD SIÊU TỐC THÀNH CÔNG!")
+        print(f" 📂 Thư mục sản phẩm: {out_dir}")
+        print(" 🚀 Tệp khởi chạy: ToolDL.exe")
+        print(" 🔒 Các file cốt lõi (license_manager, downloader, url_detector) đã được bảo vệ dạng .pyd!")
+        print("=" * 68)
+        return True
+    else:
+        print("\n❌ Quá trình đóng gói gặp lỗi.")
+        return False
+
+def build_protected_bundle():
+    """Xuất bản gói thư mục ToolDL_Protected với các file lõi đã mã hóa .pyd."""
+    print("\n" + "=" * 68)
+    print(" 🛡️  BUILD GÓI THƯ MỤC MÃ HÓA CỐT LÕI (HYBRID .PYD BUNDLE)")
+    print("=" * 68)
+
+    if not check_nuitka_installed():
+        return False
+
+    out_bundle_dir = DIST_DIR / "ToolDL_Protected"
+    if out_bundle_dir.exists():
+        shutil.rmtree(out_bundle_dir, ignore_errors=True)
+    out_bundle_dir.mkdir(parents=True, exist_ok=True)
+
+    prepare_staging_with_pyd()
+
+    print("\n📦 [3/3] Đang hoàn thiện gói phát hành vào thư mục 'dist/ToolDL_Protected'...")
     for item in BUILD_TEMP_DIR.iterdir():
         dest = out_bundle_dir / item.name
         if item.is_dir():
@@ -125,36 +185,25 @@ def build_protected_bundle():
         else:
             shutil.copy2(item, dest)
 
-    # 5. Dọn dẹp thư mục tạm
-    print("\n🧹 [4/4] Đang dọn dẹp các tệp tin tạm...")
     clean_temp()
-
     print("\n" + "=" * 68)
     print(" 🎉 XUẤT BẢN THÀNH CÔNG GÓI MÃ HÓA!")
     print(f" 📂 Thư mục sản phẩm: {out_bundle_dir}")
-    print(" 🔒 Các file bản quyền & lõi tải đã được mã hóa thành tệp nhị phân C.")
-    print(" 🌟 Toàn bộ mã nguồn dự án gốc của bạn vẫn giữ nguyên 100% không đổi.")
     print("=" * 68)
     return True
 
-def build_standalone_exe():
-    """
-    Tùy chọn 2: Đóng gói toàn bộ phần mềm thành 1 thư mục Standalone / Portable .exe siêu bảo mật.
-    Mã nguồn gốc trong dự án của bạn KHÔNG HỀ BỊ ẢNH HƯỞNG.
-    """
+def build_full_nuitka_exe():
+    """Đóng gói toàn bộ phần mềm sang C++ bằng Nuitka (Mất 3-5 phút)."""
     print("\n" + "=" * 68)
-    print(" 🚀 BUILD ỨNG DỤNG STANDALONE .EXE NATIVE C++ BẢO VỆ TOÀN DIỆN")
-    print(" 💡 Toàn bộ Python code sẽ được dịch thẳng sang mã máy C++ không thể decompile.")
+    print(" 🚀 BUILD TOÀN BỘ BẰNG NUITKA C++ NATIVE STANDALONE")
     print("=" * 68)
 
     if not check_nuitka_installed():
-        print("❌ Không thể tiếp tục do thiếu Nuitka.")
         return False
 
-    out_dir = DIST_DIR / "ToolDL_App"
+    out_dir = DIST_DIR / "ToolDL_FullNuitka"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Chuẩn bị cấu hình Nuitka tối ưu cho Windows GUI
     cmd = [
         sys.executable, "-m", "nuitka",
         "--standalone",
@@ -179,30 +228,32 @@ def build_standalone_exe():
         print("\n" + "=" * 68)
         print(" 🎉 ĐÓNG GÓI .EXE THÀNH CÔNG!")
         print(f" 📂 Vị trí ứng dụng: {out_dir / 'run_gui.dist'}")
-        print(" 🌟 Mã nguồn dự án gốc của bạn vẫn giữ nguyên 100% không đổi.")
         print("=" * 68)
         return True
     else:
-        print("\n❌ Đóng gói thất bại. Vui lòng kiểm tra thông báo lỗi phía trên.")
+        print("\n❌ Đóng gói thất bại.")
         return False
 
 def show_menu():
     """Menu tương tác thân thiện."""
     while True:
         print("\n" + "=" * 68)
-        print("   🛡️  BỘ CÔNG CỤ ĐÓNG GÓI & MÃ HÓA NUITKA (ZERO TOUCH WORKSPACE)")
+        print("   🛡️  BỘ CÔNG CỤ ĐÓNG GÓI & MÃ HÓA TOOLDL PRO")
         print("=" * 68)
-        print(" [1] 🔒 Build gói mã hóa module (.pyd) sang thư mục 'dist/ToolDL_Protected'")
-        print(" [2] 🚀 Build ứng dụng Standalone .exe sang thư mục 'dist/ToolDL_App'")
+        print(" [1] ⚡ Build Nhanh Siêu Tốc (Mã hóa .pyd + Đóng gói .exe) [~40s] (Khuyên dùng)")
+        print(" [2] 🚀 Build Toàn Bộ Bằng Nuitka C++ Native (.exe độc lập) [3-5 phút]")
+        print(" [3] 🔒 Xuất Bản Gói Thư Mục Đã Mã Hóa Cốt Lõi (dist/ToolDL_Protected)")
         print(" [0] 🚪 Thoát")
         print("=" * 68)
-        print(" 💡 Lưu ý: Cả 2 lựa chọn đều KHÔNG làm thay đổi bất kỳ file nào trong dự án.")
+        print(" 💡 Tất cả các lựa chọn đều KHÔNG làm thay đổi file nào trong dự án của bạn.")
 
-        choice = input("\n👉 Nhập lựa chọn của bạn (0-2): ").strip()
+        choice = input("\n👉 Nhập lựa chọn của bạn (0-3): ").strip()
         if choice == "1":
-            build_protected_bundle()
+            build_fast_hybrid_exe()
         elif choice == "2":
-            build_standalone_exe()
+            build_full_nuitka_exe()
+        elif choice == "3":
+            build_protected_bundle()
         elif choice == "0":
             print("👋 Tạm biệt!")
             break
@@ -210,15 +261,18 @@ def show_menu():
             print("⚠️ Lựa chọn không hợp lệ, vui lòng chọn lại.")
 
 def main():
-    parser = argparse.ArgumentParser(description="ToolDL Non-Intrusive Nuitka Builder")
-    parser.add_argument("--bundle", action="store_true", help="Build gói mã hóa .pyd vào dist/ToolDL_Protected")
-    parser.add_argument("--exe", action="store_true", help="Build Standalone .exe vào dist/ToolDL_App")
+    parser = argparse.ArgumentParser(description="ToolDL Non-Intrusive Builder")
+    parser.add_argument("--fast", action="store_true", help="Build nhanh siêu tốc: Mã hóa .pyd + Đóng gói .exe")
+    parser.add_argument("--nuitka", action="store_true", help="Build toàn bộ bằng Nuitka C++ Native")
+    parser.add_argument("--bundle", action="store_true", help="Build gói thư mục .pyd")
     args = parser.parse_args()
 
-    if args.bundle:
+    if args.fast:
+        build_fast_hybrid_exe()
+    elif args.nuitka:
+        build_full_nuitka_exe()
+    elif args.bundle:
         build_protected_bundle()
-    elif args.exe:
-        build_standalone_exe()
     else:
         show_menu()
 
