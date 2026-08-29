@@ -11,7 +11,6 @@ import time
 import hmac
 import hashlib
 import base64
-import argparse
 from pathlib import Path
 
 # Đảm bảo UTF-8 cho console
@@ -44,7 +43,7 @@ class StandaloneLicenseGenerator:
         exp_time = (now + days_valid * 86400) if days_valid > 0 else 0
         
         payload = {
-            "m": machine_id.strip().upper(),
+            "m": (machine_id or "ALL").strip().upper(),
             "e": exp_time,
             "t": "FULL",
             "i": now
@@ -57,7 +56,7 @@ class StandaloneLicenseGenerator:
         return f"{payload_b64}.{sig}"
 
 def copy_to_clipboard_safe(text: str):
-    """Sao chép an toàn vào khay nhớ tạm mà không làm sập ứng dụng trên Android."""
+    """Sao chép an toàn vào khay nhớ tạm."""
     # 1. Thử Termux API trên Android
     if shutil_which("termux-clipboard-set"):
         try:
@@ -69,7 +68,7 @@ def copy_to_clipboard_safe(text: str):
         except Exception:
             pass
 
-    # 2. Thử Tkinter trên Windows / Desktop
+    # 2. Thử Tkinter trên Windows
     if sys.platform == "win32":
         try:
             import tkinter as tk
@@ -222,49 +221,21 @@ def launch_gui():
 
 def main():
     try:
-        parser = argparse.ArgumentParser(description="ToolDL License Key Generator")
-        parser.add_argument("-m", "--machine", default="", help="Mã Machine ID của máy khách (hoặc 'ALL' cho mọi máy)")
-        parser.add_argument("-d", "--days", type=int, default=0, help="Số ngày sử dụng (0 = Vĩnh viễn / Lifetime)")
-        parser.add_argument("-c", "--count", type=int, default=1, help="Số lượng key cần tạo")
-        parser.add_argument("--gui", action="store_true", help="Bắt buộc mở giao diện đồ họa Tkinter")
-
-        args = parser.parse_args()
-
-        # 1. Nếu truyền tham số -m -> In key ra ngay
-        if args.machine:
-            print("\n" + "=" * 50)
-            print("      CÔNG CỤ TẠO LICENSE KEY - TOOLDL")
-            print("=" * 50)
-            print(f"Machine ID : {args.machine}")
-            print(f"Thời hạn   : {'Vĩnh viễn (Lifetime)' if args.days == 0 else f'{args.days} ngày'}")
-            print(f"Số lượng   : {args.count}")
-            print("-" * 50)
-
-            for i in range(args.count):
-                key = StandaloneLicenseGenerator.generate_license_key(
-                    machine_id=args.machine,
-                    days_valid=args.days
-                )
-                print(f"Key [{i+1}]: {key}")
-            print("=" * 50 + "\n")
-            return
-
-        # 2. Nếu ở trên Windows và có CustomTkinter (hoặc người dùng chọn --gui) -> Mở GUI
-        if (sys.platform == "win32" or args.gui) and not os.getenv("ANDROID_ROOT"):
+        # Nếu có cờ --gui rõ ràng trên Windows
+        if sys.platform == "win32" and len(sys.argv) > 1 and sys.argv[1] in ["--gui", "-g"]:
             try:
-                import customtkinter
                 launch_gui()
                 return
             except Exception:
                 pass
 
-        # 3. Mặc định trên Android / Linux / macOS / Server: Chạy menu tương tác CLI
+        # Mặc định chạy Menu CLI tương tác (chạy mượt mà 100% trên Android, Pydroid 3, Termux, Windows)
         interactive_menu()
 
     except Exception as e:
         print(f"\n❌ Lỗi: {e}")
         try:
-            input("\n👉 Nhấn Enter để thoát...")
+            input("\n👉 Nhấn Enter để kết thúc...")
         except Exception:
             pass
 
