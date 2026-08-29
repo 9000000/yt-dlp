@@ -148,7 +148,7 @@ DEFAULT_DOWNLOAD_PRESETS = [
     },
     {
         "id": "podcast_split_chapters",
-        "name": "🎙️ Podcast & Sách Nói (M4A Tách Chapter)",
+        "name": "🎤 Podcast & Sách Nói (M4A Tách Chapter)",
         "description": "Trích xuất âm thanh gốc M4A/AAC nguyên bản, nhúng bìa và tự động tách nhỏ theo Chapter.",
         "mode": "audio",
         "quality": "🌟 Tốt nhất có thể (Gốc)",
