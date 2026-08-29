@@ -268,68 +268,31 @@ class DownloadView(ctk.CTkFrame):
         self.duration_label = ctk.CTkLabel(pv_body, text="⏱️ Thời lượng: --", font=("Segoe UI", 9), text_color=("#64748B", "#94A3B8"), anchor="w")
         self.duration_label.pack(anchor="w")
 
-        # Nút Xem & Chọn Luồng Chi Tiết
-        self.cf_row = ctk.CTkFrame(pv_body, fg_color="transparent")
-        self.cf_row.pack(fill="x", pady=(4, 0))
-
-        self.btn_select_format = ctk.CTkButton(
-            self.cf_row,
-            text="🎛️ Xem & Chọn Luồng Chi Tiết...",
-            height=28,
-            command=self.on_open_format_picker,
-            font=("Segoe UI", 10, "bold"),
-            fg_color="#3B82F6",
-            hover_color="#2563EB"
-        )
-        self.btn_select_format.pack(side="left", fill="x", expand=True, padx=(0, 4))
-
-        self.btn_clear_format = ctk.CTkButton(
-            self.cf_row,
-            text="✕ Tự động",
-            width=70,
-            height=28,
-            command=self.on_clear_custom_format,
-            font=("Segoe UI", 9),
-            fg_color="#64748B",
-            hover_color="#475569"
-        )
-
-        self.custom_format_badge = ctk.CTkLabel(
-            pv_body,
-            text="",
-            font=("Segoe UI", 9, "bold"),
-            text_color=("#10B981", "#34D399"),
-            anchor="w",
-            wraplength=320,
-            justify="left"
-        )
-        self.custom_format_badge.pack(anchor="w", fill="x", pady=(2, 0))
-
-        # Cột Phải: Cài đặt chất lượng
+        # Cột Phải: Cài đặt chất lượng & Bộ chọn luồng
         opt_card = ctk.CTkFrame(mid_grid, corner_radius=10)
         opt_card.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
 
         opt_inner = ctk.CTkFrame(opt_card, fg_color="transparent")
-        opt_inner.pack(fill="both", expand=True, padx=10, pady=6)
+        opt_inner.pack(fill="both", expand=True, padx=12, pady=8)
 
-        # Cài đặt sẵn (Preset)
+        # 1. Cài đặt sẵn (Preset)
         p_row = ctk.CTkFrame(opt_inner, fg_color="transparent")
-        p_row.pack(fill="x", pady=(0, 4))
-        ctk.CTkLabel(p_row, text="⚡ Cài đặt sẵn:", font=("Segoe UI", 10, "bold"), text_color=("#2563EB", "#60A5FA")).pack(side="left")
+        p_row.pack(fill="x", pady=(0, 6))
+        ctk.CTkLabel(p_row, text="⚡ Cấu hình Preset:", font=("Segoe UI", 10, "bold"), text_color=("#2563EB", "#60A5FA")).pack(side="left")
         self.preset_combo = ctk.CTkComboBox(
             p_row,
             values=[p.get("name", "Preset") for p in self.config_manager.get_presets()],
             command=self.on_preset_selected,
-            height=26,
-            font=("Segoe UI", 9)
+            height=28,
+            font=("Segoe UI", 10)
         )
-        self.preset_combo.pack(side="left", fill="x", expand=True, padx=(4, 4))
+        self.preset_combo.pack(side="left", fill="x", expand=True, padx=(6, 4))
 
         self.btn_save_curr_preset = ctk.CTkButton(
             p_row,
             text="💾 Lưu mẫu",
-            width=68,
-            height=26,
+            width=70,
+            height=28,
             command=self.on_quick_save_preset,
             fg_color="#64748B",
             hover_color="#475569",
@@ -338,116 +301,94 @@ class DownloadView(ctk.CTkFrame):
         self.btn_save_curr_preset.pack(side="right")
 
         self.mode_var = ctk.StringVar(value="video")
-        self.mode_seg = ctk.CTkSegmentedButton(opt_inner, values=["🎬 Video + Tiếng", "🎵 Chỉ lấy Âm thanh"], command=self.on_mode_changed, height=26)
+        self.mode_seg = ctk.CTkSegmentedButton(opt_inner, values=["🎬 Video + Tiếng", "🎵 Chỉ lấy Âm thanh"], command=self.on_mode_changed, height=28)
         self.mode_seg.set("🎬 Video + Tiếng")
-        self.mode_seg.pack(fill="x", pady=(0, 4))
+        self.mode_seg.pack(fill="x", pady=(0, 6))
 
-        grid_c = ctk.CTkFrame(opt_inner, fg_color="transparent")
-        grid_c.pack(fill="x", pady=(0, 4))
-        grid_c.grid_columnconfigure((0, 1), weight=1)
+        # 2. KHUNG XEM & CHỌN LUỒNG CHI TIẾT (FORMAT SELECTOR)
+        fmt_box = ctk.CTkFrame(opt_inner, fg_color=("#F1F5F9", "#1E293B"), corner_radius=8, border_width=1, border_color=("#CBD5E1", "#334155"))
+        fmt_box.pack(fill="x", pady=(0, 6))
 
-        ctk.CTkLabel(grid_c, text="Độ phân giải tối đa:", font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w")
-        ctk.CTkLabel(grid_c, text="Định dạng Video Container:", font=("Segoe UI", 10)).grid(row=0, column=1, sticky="w", padx=(4, 0))
+        fb_inner = ctk.CTkFrame(fmt_box, fg_color="transparent")
+        fb_inner.pack(fill="x", padx=10, pady=8)
 
-        self.quality_combo = ctk.CTkComboBox(grid_c, values=[
-            "🌟 Tốt nhất có thể (Gốc)",
-            "🎬 8K Ultra HD (4320p)",
-            "🎬 4K Ultra HD (2160p)",
-            "📺 2K Quad HD (1440p)",
-            "📺 Full HD 1080p (60fps)",
-            "📺 Full HD 1080p",
-            "📱 HD 720p (60fps)",
-            "📱 HD 720p",
-            "📱 SD 480p",
-            "⚡ Thấp 360p",
-            "⚡ 240p",
-            "⚡ 144p"
-        ], height=28)
-        self.quality_combo.set("🌟 Tốt nhất có thể (Gốc)")
-        self.quality_combo.grid(row=1, column=0, sticky="ew", padx=(0, 2), pady=(0, 4))
+        fb_top = ctk.CTkFrame(fb_inner, fg_color="transparent")
+        fb_top.pack(fill="x", pady=(0, 4))
 
-        self.fmt_combo = ctk.CTkComboBox(grid_c, values=[
-            "MP4 (Khuyên dùng - Chuẩn quốc tế)",
-            "MKV (Matroska - Hỗ trợ đa luồng)",
-            "WEBM (Google WebM)",
-            "MOV (Apple QuickTime)",
-            "AVI (Audio Video Interleave)",
-            "TS (Transport Stream)",
-            "FLV (Flash Video)",
-            "3GP (Di động cổ điển)",
-            "OGV (Ogg Video)",
-            "WMV (Windows Media)"
-        ], height=28)
-        self.fmt_combo.set("MP4 (Khuyên dùng - Chuẩn quốc tế)")
-        self.fmt_combo.grid(row=1, column=1, sticky="ew", padx=(2, 0), pady=(0, 4))
+        self.btn_select_format = ctk.CTkButton(
+            fb_top,
+            text="🎛️ XEM & CHỌN LUỒNG CHI TIẾT (FORMAT SELECTOR)...",
+            height=32,
+            command=self.on_open_format_picker,
+            font=("Segoe UI", 10, "bold"),
+            fg_color="#3B82F6",
+            hover_color="#2563EB"
+        )
+        self.btn_select_format.pack(side="left", fill="x", expand=True, padx=(0, 4))
 
-        ctk.CTkLabel(grid_c, text="Bộ mã hóa Video (Codec):", font=("Segoe UI", 10)).grid(row=2, column=0, sticky="w")
-        ctk.CTkLabel(grid_c, text="Tùy chọn Khung hình (FPS):", font=("Segoe UI", 10)).grid(row=2, column=1, sticky="w", padx=(4, 0))
+        self.btn_clear_format = ctk.CTkButton(
+            fb_top,
+            text="✕ Tự động",
+            width=75,
+            height=32,
+            command=self.on_clear_custom_format,
+            font=("Segoe UI", 9, "bold"),
+            fg_color="#64748B",
+            hover_color="#475569"
+        )
 
-        self.codec_combo = ctk.CTkComboBox(grid_c, values=[
-            "Tự động (Tối ưu theo nguồn gốc)",
-            "H.264 / AVC1 (Tương thích cao nhất)",
-            "H.265 / HEVC (Siêu nén chất lượng cao)",
-            "VP9 (Google 4K sắc nét)",
-            "AV1 (Codec thế hệ mới)",
-            "ProRes (Chất lượng dựng phim)",
-            "MPEG-4 (Thiết bị đời cũ)"
-        ], height=28)
-        self.codec_combo.set("Tự động (Tối ưu theo nguồn gốc)")
-        self.codec_combo.grid(row=3, column=0, sticky="ew", padx=(0, 2), pady=(0, 4))
+        self.custom_format_badge = ctk.CTkLabel(
+            fb_inner,
+            text="🌟 Chế độ: Tự động tải chất lượng cao nhất theo Preset",
+            font=("Segoe UI", 9),
+            text_color=("#64748B", "#94A3B8"),
+            anchor="w",
+            wraplength=340,
+            justify="left"
+        )
+        self.custom_format_badge.pack(anchor="w", fill="x")
 
-        self.fps_combo = ctk.CTkComboBox(grid_c, values=[
-            "60fps (Mượt mà)",
-            "30fps (Tiêu chuẩn)",
-            "Mặc định (Theo video gốc)"
-        ], height=28)
-        self.fps_combo.set("60fps (Mượt mà)")
-        self.fps_combo.grid(row=3, column=1, sticky="ew", padx=(2, 0), pady=(0, 4))
+        # 3. Cookie xác thực
+        cookie_line = ctk.CTkFrame(opt_inner, fg_color="transparent")
+        cookie_line.pack(fill="x", pady=(0, 6))
+        ctk.CTkLabel(cookie_line, text="🍪 Cookie:", font=("Segoe UI", 10)).pack(side="left", padx=(0, 6))
 
-        ctk.CTkLabel(grid_c, text="Bitrate & Định dạng Âm thanh:", font=("Segoe UI", 10)).grid(row=4, column=0, sticky="w")
-        ctk.CTkLabel(grid_c, text="Cookie xác thực:", font=("Segoe UI", 10)).grid(row=4, column=1, sticky="w", padx=(4, 0))
-
-        self.audio_combo = ctk.CTkComboBox(grid_c, values=[
-            "MP3 - 320 kbps (Cực cao - Studio Master)",
-            "MP3 - 256 kbps (Chất lượng rất cao)",
-            "MP3 - 192 kbps (Tiêu chuẩn cao)",
-            "MP3 - 128 kbps (Tiết kiệm dung lượng)",
-            "MP3 - 96 kbps (Siêu nhẹ)",
-            "M4A / AAC (Gốc - 256 kbps)",
-            "FLAC (Lossless 24-bit)",
-            "WAV (Studio PCM 1411 kbps)",
-            "OPUS - 160 kbps (Siêu nét)",
-            "OGG / Vorbis - 192 kbps",
-            "ALAC (Apple Lossless)",
-            "WMA (Windows Media)",
-            "AIFF (Apple PCM)"
-        ], height=28)
-        self.audio_combo.set("MP3 - 320 kbps (Cực cao - Studio Master)")
-        self.audio_combo.grid(row=5, column=0, sticky="ew", padx=(0, 2))
-
-        self.cookie_browser_combo = ctk.CTkComboBox(grid_c, values=["Không dùng Cookie", "Google Chrome", "Microsoft Edge", "Mozilla Firefox", "Brave Browser", "Opera", "Tệp Cookie (.txt)"], height=28, command=self.on_cookie_changed)
+        self.cookie_browser_combo = ctk.CTkComboBox(
+            cookie_line,
+            values=["Không dùng Cookie", "Google Chrome", "Microsoft Edge", "Mozilla Firefox", "Brave Browser", "Opera", "Tệp Cookie (.txt)"],
+            height=28,
+            command=self.on_cookie_changed
+        )
         saved_b = self.config_manager.get("browser_cookie", "none")
         c_map = {"none": "Không dùng Cookie", "chrome": "Google Chrome", "edge": "Microsoft Edge", "firefox": "Mozilla Firefox", "brave": "Brave Browser", "opera": "Opera", "file": "Tệp Cookie (.txt)"}
         self.cookie_browser_combo.set(c_map.get(saved_b, "Không dùng Cookie"))
-        self.cookie_browser_combo.grid(row=5, column=1, sticky="ew", padx=(2, 0))
+        self.cookie_browser_combo.pack(side="left", fill="x", expand=True)
 
+        # 4. Tùy chọn nâng cao
         chk_line = ctk.CTkFrame(opt_inner, fg_color="transparent")
-        chk_line.pack(fill="x", pady=(4, 2))
+        chk_line.pack(fill="x", pady=(0, 6))
         self.thumb_check = ctk.CTkCheckBox(chk_line, text="Nhúng Thumbnail", font=("Segoe UI", 9))
         self.thumb_check.select()
-        self.thumb_check.pack(side="left", padx=(0, 6))
+        self.thumb_check.pack(side="left", padx=(0, 8))
 
         self.meta_check = ctk.CTkCheckBox(chk_line, text="Gắn Metadata", font=("Segoe UI", 9))
         self.meta_check.select()
-        self.meta_check.pack(side="left", padx=(0, 6))
+        self.meta_check.pack(side="left", padx=(0, 8))
 
         self.sub_check = ctk.CTkCheckBox(chk_line, text="Nhúng Phụ đề", font=("Segoe UI", 9))
-        self.sub_check.pack(side="left", padx=(0, 6))
+        self.sub_check.pack(side="left", padx=(0, 8))
 
         self.split_chap_check = ctk.CTkCheckBox(chk_line, text="Tách Chapter", font=("Segoe UI", 9))
         self.split_chap_check.pack(side="left")
 
+        # 5. Thư mục lưu
         dir_line = ctk.CTkFrame(opt_inner, fg_color="transparent")
+        dir_line.pack(fill="x", pady=(0, 0))
+        ctk.CTkLabel(dir_line, text="📁 Lưu tại:", font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
+        self.dir_entry = ctk.CTkEntry(dir_line, font=("Segoe UI", 9), height=26)
+        self.dir_entry.insert(0, self.config_manager.get("download_dir"))
+        self.dir_entry.pack(side="left", fill="x", expand=True, padx=(0, 4))
+        ctk.CTkButton(dir_line, text="📂 Đổi", width=45, height=26, command=self.on_browse_dir, fg_color="#64748B", hover_color="#475569", font=("Segoe UI", 9)).pack(side="right")
         dir_line.pack(fill="x", pady=(2, 0))
         ctk.CTkLabel(dir_line, text="📁 Lưu tại:", font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self.dir_entry = ctk.CTkEntry(dir_line, font=("Segoe UI", 9), height=26)
@@ -610,40 +551,16 @@ class DownloadView(ctk.CTkFrame):
         ctk.CTkLabel(right_ctrl, text="⚙️ Cài đặt hàng loạt:", font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(0, 2))
 
         row_b_opt = ctk.CTkFrame(right_ctrl, fg_color="transparent")
-        row_b_opt.pack(fill="x", pady=(0, 4))
-        ctk.CTkLabel(row_b_opt, text="⚡ Preset:", font=("Segoe UI", 9, "bold"), text_color=("#2563EB", "#60A5FA")).pack(side="left", padx=(0, 4))
+        row_b_opt.pack(fill="x", pady=(0, 6))
+        ctk.CTkLabel(row_b_opt, text="⚡ Cấu hình Preset:", font=("Segoe UI", 9, "bold"), text_color=("#2563EB", "#60A5FA")).pack(side="left", padx=(0, 6))
         self.batch_preset_combo = ctk.CTkComboBox(
             row_b_opt,
             values=[p.get("name", "Preset") for p in self.config_manager.get_presets()],
             command=self.on_batch_preset_selected,
-            height=26,
-            font=("Segoe UI", 9)
+            height=28,
+            font=("Segoe UI", 10)
         )
-        self.batch_preset_combo.pack(side="left", fill="x", expand=True, padx=(0, 4))
-
-        self.batch_fmt_combo = ctk.CTkComboBox(
-            row_b_opt,
-            values=[
-                "🌟 Video MP4 (Gốc)",
-                "🎬 Video 4K (2160p)",
-                "📺 Video 1080p (Full HD)",
-                "📱 Video 720p (HD)",
-                "📱 Video 480p (SD)",
-                "📦 Video MKV (Gốc)",
-                "📦 Video WEBM",
-                "🎵 Âm thanh MP3 320k",
-                "🎵 Âm thanh MP3 192k",
-                "🎵 Âm thanh M4A / AAC",
-                "🎵 Âm thanh FLAC Lossless",
-                "🎵 Âm thanh WAV (PCM)",
-                "🎵 Âm thanh OPUS"
-            ],
-            height=26,
-            font=("Segoe UI", 9),
-            width=145
-        )
-        self.batch_fmt_combo.set("🌟 Video MP4 (Gốc)")
-        self.batch_fmt_combo.pack(side="right")
+        self.batch_preset_combo.pack(side="left", fill="x", expand=True)
 
         self.batch_range_entry = ctk.CTkEntry(right_ctrl, placeholder_text="Phạm vi playlist (VD: 1-10 hoặc để trống)", height=26, font=("Segoe UI", 9))
         self.batch_range_entry.pack(fill="x", pady=(0, 4))
@@ -970,23 +887,9 @@ class DownloadView(ctk.CTkFrame):
     def on_mode_changed(self, value):
         if "Âm thanh" in value:
             self.mode_var.set("audio")
-            self.quality_combo.configure(state="disabled")
-            self.fmt_combo.configure(state="disabled")
-            if hasattr(self, 'codec_combo'):
-                self.codec_combo.configure(state="disabled")
-            if hasattr(self, 'fps_combo'):
-                self.fps_combo.configure(state="disabled")
-            self.audio_combo.configure(state="normal")
             self.sub_check.configure(state="disabled")
         else:
             self.mode_var.set("video")
-            self.quality_combo.configure(state="normal")
-            self.fmt_combo.configure(state="normal")
-            if hasattr(self, 'codec_combo'):
-                self.codec_combo.configure(state="normal")
-            if hasattr(self, 'fps_combo'):
-                self.fps_combo.configure(state="normal")
-            self.audio_combo.configure(state="normal")
             self.sub_check.configure(state="normal")
 
     def refresh_presets_in_view(self):
@@ -1005,19 +908,8 @@ class DownloadView(ctk.CTkFrame):
 
     def on_batch_preset_selected(self, choice):
         p = self.config_manager.get_preset_by_name(choice)
-        if not p:
-            return
-        m = p.get("mode", "video")
-        q = p.get("quality", "🌟 Video MP4 (Gốc)")
-        if m == "audio":
-            self.batch_fmt_combo.set("🎵 Âm thanh MP3 320k")
-        elif "1080" in q:
-            self.batch_fmt_combo.set("🎬 Video 1080p")
-        elif "720" in q:
-            self.batch_fmt_combo.set("📱 Video 720p")
-        else:
-            self.batch_fmt_combo.set("🌟 Video MP4 (Gốc)")
-        self.log(f"[Preset hàng loạt] Đã chọn: {p.get('name')}")
+        if p:
+            self.log(f"[Preset hàng loạt] Đã chọn cấu hình: {p.get('name')}")
 
     def apply_preset(self, p: dict):
         mode = p.get("mode", "video")
@@ -1027,17 +919,6 @@ class DownloadView(ctk.CTkFrame):
         else:
             self.mode_seg.set("🎬 Video + Tiếng")
             self.on_mode_changed("🎬 Video + Tiếng")
-
-        if p.get("quality"):
-            self.quality_combo.set(p["quality"])
-        if p.get("format"):
-            self.fmt_combo.set(p["format"])
-        if p.get("video_codec") and hasattr(self, 'codec_combo'):
-            self.codec_combo.set(p["video_codec"])
-        if p.get("fps_prefer") and hasattr(self, 'fps_combo'):
-            self.fps_combo.set(p["fps_prefer"])
-        if p.get("audio_codec"):
-            self.audio_combo.set(p["audio_codec"])
 
         if p.get("embed_thumbnail", True):
             self.thumb_check.select()
@@ -1060,6 +941,7 @@ class DownloadView(ctk.CTkFrame):
             else:
                 self.split_chap_check.deselect()
 
+        self.on_clear_custom_format()
         self.log(f"[Preset] Đã nạp cấu hình mẫu: {p.get('name')}")
 
     def on_quick_save_preset(self):
@@ -1073,13 +955,13 @@ class DownloadView(ctk.CTkFrame):
             "name": name,
             "description": "Lưu nhanh từ màn hình tải video",
             "mode": "audio" if is_audio else "video",
-            "quality": self.quality_combo.get(),
-            "format": self.fmt_combo.get() if not is_audio else "MP3",
-            "audio_codec": self.audio_combo.get(),
+            "quality": "🌟 Tốt nhất có thể (Gốc)",
+            "format": "MP3" if is_audio else "MP4",
+            "audio_codec": "MP3 - 320 kbps (Cực cao)",
             "concurrent_fragments": 4,
             "ratelimit": "Không giới hạn (Tối đa)",
-            "video_codec": self.codec_combo.get() if not is_audio and hasattr(self, 'codec_combo') else "Không áp dụng",
-            "fps_prefer": self.fps_combo.get() if not is_audio and hasattr(self, 'fps_combo') else "Mặc định",
+            "video_codec": "Tự động (Tối ưu)",
+            "fps_prefer": "60fps (Mượt mà)",
             "embed_subtitles": bool(self.sub_check.get()) if not is_audio else False,
             "auto_subs": True,
             "sub_langs": "vi,en",
@@ -1117,10 +999,20 @@ class DownloadView(ctk.CTkFrame):
             msgbox.showwarning("Cảnh báo", "Vui lòng chọn thư mục lưu tệp!")
             return
 
-        audio_only = (self.mode_var.get() == "audio")
-        quality = self.quality_combo.get()
-        fmt = self.fmt_combo.get()
-        audio_codec = self.audio_combo.get()
+        active_p_name = self.preset_combo.get() if hasattr(self, 'preset_combo') else ""
+        p = self.config_manager.get_preset_by_name(active_p_name) or {}
+
+        mode = "audio" if (self.mode_var.get() == "audio") else p.get("mode", "video")
+        audio_only = (mode == "audio")
+        quality = p.get("quality", "🌟 Tốt nhất có thể (Gốc)")
+        fmt = p.get("format", "MP4" if not audio_only else "MP3")
+        audio_codec = p.get("audio_codec", "MP3 - 320 kbps (Cực cao)")
+        video_codec = p.get("video_codec", "")
+        fps_prefer = p.get("fps_prefer", "")
+        concurrent_fragments = p.get("concurrent_fragments", 4)
+        ratelimit = p.get("ratelimit", "")
+        auto_subs = p.get("auto_subs", True)
+        split_chapters = bool(self.split_chap_check.get()) if hasattr(self, 'split_chap_check') else p.get("split_chapters", False)
         embed_subs = bool(self.sub_check.get())
         embed_thumb = bool(self.thumb_check.get())
         add_meta = bool(self.meta_check.get())
@@ -1295,17 +1187,16 @@ class DownloadView(ctk.CTkFrame):
     def _process_batch(self):
         total = len(self.queue_items)
         out_dir = self.config_manager.get("download_dir")
-        fmt_choice = self.batch_fmt_combo.get()
-        audio_only = "Âm thanh" in fmt_choice
+        active_p_name = self.batch_preset_combo.get() if hasattr(self, 'batch_preset_combo') else ""
+        p = self.config_manager.get_preset_by_name(active_p_name) or {}
+
+        mode = p.get("mode", "video")
+        audio_only = (mode == "audio")
+        quality = p.get("quality", "🌟 Tốt nhất có thể (Gốc)")
+        out_fmt = p.get("format", "MP4" if not audio_only else "MP3")
+        audio_codec = p.get("audio_codec", "MP3 - 320 kbps (Cực cao)")
         playlist_range = self.batch_range_entry.get().strip() or None
 
-        quality = "🌟 Tốt nhất có thể (Chất lượng gốc cao nhất)"
-        if "1080" in fmt_choice:
-            quality = "Full HD (1080p)"
-        elif "720" in fmt_choice:
-            quality = "HD (720p)"
-
-        out_fmt = "mp3" if "MP3" in fmt_choice else ("m4a" if "M4A" in fmt_choice else "mp4")
         cookie_browser = self.config_manager.get("browser_cookie", "none")
         cookie_file = self.config_manager.get("cookie_file_path", "")
         pot_enabled = self.config_manager.get("youtube_pot_enabled", True)
