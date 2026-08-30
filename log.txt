@@ -1,0 +1,14 @@
+⚙️ Đang biên dịch toàn bộ dự án sang C++ bằng Nuitka (Vui lòng đợi vài phút)...
+Nuitka-Options: Used command line options:
+Nuitka-Options:   --standalone --windows-disable-console --enable-plugin=tk-inter --include-package=customtkinter
+Nuitka-Options:   --include-package=yt_dlp --include-package=PIL --include-package=webview --include-data-file=public.key=public.key
+Nuitka-Options:   --include-data-file=config.json=config.json --output-dir=F:\MyGithub\yt-dlp\dist\ToolDL_App
+Nuitka-Options:   --output-filename=ToolDL.exe run_gui.py
+Nuitka:WARNING: The old console option '--disable-console' should not be given anymore, use '--windows-console-mode=disable' instead.
+Nuitka:WARNING: It also has the extra mode 'attach' to consider.
+Nuitka: Starting Python compilation with:
+Nuitka:   Version '4.2' on Python 3.14 (flavor 'CPython Official') commercial grade 'not installed'.
+FATAL: pywebview: Conflict between user and plugin decision for module 'webview.platforms.android'.
+Nuitka-Reports: Compilation crash report written to file 'nuitka-crash-report.xml'.
+
+❌ Đóng gói thất bại. Vui lòng kiểm tra thông báo lỗi phía trên.
