@@ -39,15 +39,42 @@ class UpdaterManager:
         """
         Lấy đường dẫn FFmpeg:
         1. Ưu tiên thư mục bin/ nội bộ của app.
-        2. Sau đó kiểm tra trong PATH hệ thống.
+        2. Kiểm tra trong _internal/bin/
+        3. Kiểm tra trong thư mục gốc app_dir hoặc _internal/
+        4. Kiểm tra trong PATH hệ thống.
         """
-        if self.ffmpeg_exe.exists():
-            return str(self.ffmpeg_exe)
+        candidates = [
+            self.ffmpeg_exe,
+            self.app_dir / "_internal" / "bin" / "ffmpeg.exe",
+            self.app_dir / "ffmpeg.exe",
+            self.app_dir / "_internal" / "ffmpeg.exe"
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return str(candidate)
 
         # Kiểm tra PATH hệ thống
         sys_ffmpeg = shutil.which("ffmpeg")
         if sys_ffmpeg:
             return sys_ffmpeg
+
+        return None
+
+    def get_ffprobe_path(self) -> str | None:
+        """Lấy đường dẫn FFprobe với các vị trí dự phòng tương tự FFmpeg."""
+        candidates = [
+            self.ffprobe_exe,
+            self.app_dir / "_internal" / "bin" / "ffprobe.exe",
+            self.app_dir / "ffprobe.exe",
+            self.app_dir / "_internal" / "ffprobe.exe"
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return str(candidate)
+
+        sys_ffprobe = shutil.which("ffprobe")
+        if sys_ffprobe:
+            return sys_ffprobe
 
         return None
 

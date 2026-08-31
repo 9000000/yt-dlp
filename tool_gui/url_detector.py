@@ -92,23 +92,70 @@ class URLDetector:
     @classmethod
     def _extract_tiktok_fallback(cls, url: str) -> tuple[bool, dict | None, str]:
         try:
+            target_url = url.strip()
+            # Xử lý tự động rút gọn link (vt.tiktok.com, vm.tiktok.com, /t/...)
+            if "vt.tiktok.com" in target_url or "vm.tiktok.com" in target_url or "/t/" in target_url:
+                try:
+                    r_head = requests.head(target_url, allow_redirects=True, timeout=6, headers={"User-Agent": "Mozilla/5.0"})
+                    if r_head.url:
+                        target_url = r_head.url
+                except Exception:
+                    pass
+
             api_url = "https://www.tikwm.com/api/"
-            resp = requests.post(api_url, data={"url": url, "hd": 1}, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+            resp = requests.post(api_url, data={"url": target_url, "hd": 1}, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
             if resp.status_code == 200:
                 data = resp.json()
                 if data.get("code") == 0 and "data" in data:
                     d = data["data"]
                     title = d.get("title") or "Video TikTok không tiêu đề"
-                    author = d.get("author", {}).get("nickname", "Không rõ tác giả")
+                    author = d.get("author", {}).get("nickname") or d.get("author", {}).get("unique_id") or "Không rõ tác giả"
                     duration = d.get("duration", 0)
                     cover = d.get("cover") or d.get("origin_cover")
-                    play_url = d.get("hdplay") or d.get("play")
-                    if play_url and not play_url.startswith("http"):
-                        play_url = "https://www.tikwm.com" + play_url
+                    play_sd = d.get("play") or ""
+                    if play_sd and not play_sd.startswith("http"):
+                        play_sd = "https://www.tikwm.com" + play_sd
+                    play_hd = d.get("hdplay") or play_sd
+                    if play_hd and not play_hd.startswith("http"):
+                        play_hd = "https://www.tikwm.com" + play_hd
 
-                    music_url = d.get("music")
+                    music_url = d.get("music") or ""
                     if music_url and not music_url.startswith("http"):
                         music_url = "https://www.tikwm.com" + music_url
+
+                    formats = [
+                        {
+                            "format_id": "hd",
+                            "format_note": "🌟 Full HD 1080p (Không Logo/Watermark)",
+                            "ext": "mp4",
+                            "resolution": "1080p",
+                            "vcodec": "h264",
+                            "acodec": "aac",
+                            "url": play_hd or play_sd,
+                            "filesize": None
+                        },
+                        {
+                            "format_id": "sd",
+                            "format_note": "📱 SD 720p (Không Logo/Watermark)",
+                            "ext": "mp4",
+                            "resolution": "720p",
+                            "vcodec": "h264",
+                            "acodec": "aac",
+                            "url": play_sd,
+                            "filesize": None
+                        }
+                    ]
+                    if music_url:
+                        formats.append({
+                            "format_id": "audio",
+                            "format_note": "🎵 Âm thanh / Nhạc nền gốc MP3",
+                            "ext": "mp3",
+                            "resolution": "audio only",
+                            "vcodec": "none",
+                            "acodec": "mp3",
+                            "url": music_url,
+                            "filesize": None
+                        })
 
                     result = {
                         "url": url,
@@ -120,7 +167,7 @@ class URLDetector:
                         "platform": "TikTok",
                         "is_playlist": False,
                         "playlist_count": 1,
-                        "direct_video_url": play_url,
+                        "direct_video_url": play_hd or play_sd,
                         "direct_audio_url": music_url,
                         "qualities": [
                             "🌟 Tốt nhất có thể (Chất lượng gốc cao nhất)",
@@ -128,7 +175,8 @@ class URLDetector:
                             "📱 HD (720p)",
                             "⚡ SD (480p)",
                             "🎵 Chỉ tải Âm thanh (Audio MP3/M4A)"
-                        ]
+                        ],
+                        "formats": formats
                     }
                     return True, result, "Lấy thông tin TikTok thành công!"
         except Exception:
@@ -150,6 +198,12 @@ class URLDetector:
         Tự động xử lý ngoại lệ cookie và PO Token.
         """
         plat = cls.detect_platform(url)
+
+        # Ưu tiên giải mã tốc độ cao cho TikTok để tránh bị chặn IP/Captcha
+        if plat == "TikTok":
+            ok, res, msg = cls._extract_tiktok_fallback(url)
+            if ok:
+                return True, res, msg
 
         if yt_dlp:
             base_opts = {
@@ -245,7 +299,7 @@ class URLDetector:
                 }
                 return True, result, "Phân tích thông tin thành công!"
 
-        # Fallback cho TikTok
+        # Fallback lần 2 cho TikTok nếu yt-dlp thất bại
         if plat == "TikTok":
             ok, res, msg = cls._extract_tiktok_fallback(url)
             if ok:

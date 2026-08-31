@@ -131,7 +131,11 @@ class BrowserAPI:
 def launch(url: str = "https://www.youtube.com"):
     try:
         import webview
-        app_dir = Path(__file__).resolve().parent.parent
+        if getattr(sys, 'frozen', False):
+            app_dir = Path(sys.executable).parent
+        else:
+            app_dir = Path(__file__).resolve().parent.parent
+
         url_file = app_dir / ".current_browser_url.txt"
         action_file = app_dir / ".browser_action.json"
 

@@ -33,6 +33,7 @@ class DownloadTask:
         self,
         url: str,
         output_dir: str,
+        title: str = "",
         quality: str = "🌟 Tốt nhất có thể (Chất lượng gốc cao nhất)",
         output_format: str = "MP4",
         audio_only: bool = False,
@@ -61,6 +62,7 @@ class DownloadTask:
     ):
         self.url = url
         self.output_dir = output_dir
+        self.title = title
         self.quality = quality
         self.output_format = output_format.lower()
         self.audio_only = audio_only
@@ -221,9 +223,19 @@ class DownloadTask:
         total_len = int(resp.headers.get('content-length', 0))
         downloaded = 0
         file_ext = "mp3" if self.audio_only else "mp4"
-        file_name = f"video_{int(time.time())}.{file_ext}"
+
+        # Đặt tên file theo tiêu đề video nếu có
+        import re
+        clean_title = re.sub(r'[\\/*?:"<>|]', "", self.title).strip() if self.title else ""
+        if not clean_title:
+            clean_title = f"video_{int(time.time())}"
+        if len(clean_title) > 100:
+            clean_title = clean_title[:100].strip()
+
+        file_name = f"{clean_title}.{file_ext}"
         target_file = out_path / file_name
 
+        start_time = time.time()
         with open(target_file, 'wb') as f:
             for chunk in resp.iter_content(chunk_size=1024 * 64):
                 if self._stop_requested:
@@ -231,19 +243,22 @@ class DownloadTask:
                 if chunk:
                     f.write(chunk)
                     downloaded += len(chunk)
+                    elapsed = time.time() - start_time
+                    speed = downloaded / elapsed if elapsed > 0 else 0
+                    eta = int((total_len - downloaded) / speed) if speed > 0 and total_len > downloaded else None
                     if total_len > 0 and self.on_progress:
                         pct = (downloaded / total_len) * 100.0
                         self.on_progress({
                             "percent": pct,
                             "percent_float": pct / 100.0,
-                            "speed": "--",
-                            "eta": "--",
+                            "speed": self._format_speed(speed),
+                            "eta": f"{eta}s" if eta is not None else "--",
                             "size_info": f"{self._format_size(downloaded)} / {self._format_size(total_len)}",
-                            "status_text": f"Đang tải trực tiếp: {pct:.1f}%"
+                            "status_text": f"Đang tải: {pct:.1f}% ({self._format_speed(speed)})"
                         })
 
         if self.on_finish:
-            self.on_finish(True, "✅ Tải hoàn tất thành công!", str(out_path))
+            self.on_finish(True, "✅ Tải hoàn tất thành công!", str(target_file))
         return True
 
     def _run_download(self):

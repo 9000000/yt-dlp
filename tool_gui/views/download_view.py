@@ -49,8 +49,13 @@ class DownloadView(ctk.CTkFrame):
         self.browser_mgr = None
 
         # Thư mục gốc & File lưu URL đang duyệt
-        self.app_dir = Path(__file__).resolve().parent.parent.parent
-        self.tool_dir = Path(__file__).resolve().parent.parent
+        if getattr(sys, 'frozen', False):
+            self.app_dir = Path(sys.executable).parent
+            self.tool_dir = self.app_dir / "_internal" / "tool_gui"
+        else:
+            self.app_dir = Path(__file__).resolve().parent.parent.parent
+            self.tool_dir = Path(__file__).resolve().parent.parent
+
         self.url_sync_file = self.app_dir / ".current_browser_url.txt"
         self.action_file = self.app_dir / ".browser_action.json"
         self._last_action_time = time.time()
@@ -215,7 +220,15 @@ class DownloadView(ctk.CTkFrame):
 
         # 3. Nếu là Playlist / Kênh -> Mở trong trình duyệt để duyệt hoặc quét
         t_low = target.lower()
-        if "playlist?list=" in t_low or "/channel/" in t_low or "/user/" in t_low or "/c/" in t_low or "/@" in t_low and "/video/" not in t_low:
+        is_tiktok = "tiktok.com" in t_low or "douyin.com" in t_low
+        is_channel = (
+            "playlist?list=" in t_low
+            or "/channel/" in t_low
+            or "/user/" in t_low
+            or "/c/" in t_low
+            or (not is_tiktok and "/@" in t_low and "/video/" not in t_low and "/shorts/" not in t_low)
+        )
+        if is_channel and not any(k in t_low for k in ["/video/", "vt.tiktok.com", "vm.tiktok.com", "/t/", "/watch", "youtu.be", "/reel/", "/p/"]):
             self.show_browser_mode()
             self.browser_address_entry.delete(0, "end")
             self.browser_address_entry.insert(0, target)
@@ -478,8 +491,12 @@ class DownloadView(ctk.CTkFrame):
 
     def on_open_format_picker(self):
         """Mở cửa sổ xem và chọn luồng chi tiết Video/Audio/Combined."""
-        if not self.current_meta or not self.current_meta.get("formats"):
+        if not self.current_meta:
             msgbox.showinfo("Thông báo", "Vui lòng nhập link và bấm '⚡ Phân Tích Tự Động' trước để quét danh sách các luồng Video & Âm thanh!")
+            return
+        formats = self.current_meta.get("formats") or []
+        if not formats:
+            msgbox.showinfo("Thông báo", "Video này không có danh sách luồng riêng biệt (Đang dùng chất lượng tốt nhất mặc định).")
             return
         from tool_gui.views.format_picker_dialog import FormatPickerDialog
         FormatPickerDialog(
@@ -1015,12 +1032,19 @@ class DownloadView(ctk.CTkFrame):
         video_codec = p.get("video_codec", "")
         fps_prefer = p.get("fps_prefer", "")
 
+        v_title = self.current_meta.get("title", "") if self.current_meta else ""
         direct_url = None
         if self.current_meta:
-            if audio_only and self.current_meta.get("direct_audio_url"):
-                direct_url = self.current_meta["direct_audio_url"]
-            elif not audio_only and self.current_meta.get("direct_video_url"):
-                direct_url = self.current_meta["direct_video_url"]
+            if self.selected_custom_format_id:
+                for f in self.current_meta.get("formats", []):
+                    if str(f.get("format_id")) == str(self.selected_custom_format_id) and f.get("url"):
+                        direct_url = f["url"]
+                        break
+            if not direct_url:
+                if audio_only and self.current_meta.get("direct_audio_url"):
+                    direct_url = self.current_meta["direct_audio_url"]
+                elif not audio_only and self.current_meta.get("direct_video_url"):
+                    direct_url = self.current_meta["direct_video_url"]
 
         self.is_downloading = True
         self.dl_btn.configure(text="⏹️ HỦY TẢI XUỐNG", fg_color="#EF4444", hover_color="#DC2626")
@@ -1032,6 +1056,7 @@ class DownloadView(ctk.CTkFrame):
         self.current_task = DownloadTask(
             url=url,
             output_dir=out_dir,
+            title=v_title,
             quality=quality,
             output_format=fmt,
             audio_only=audio_only,

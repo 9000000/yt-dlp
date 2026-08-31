@@ -330,8 +330,8 @@ class BrowserView(ctk.CTkFrame):
             if getattr(sys, 'frozen', False):
                 subprocess.Popen([sys.executable, "--browser", target_url])
             else:
-                launcher_py = Path(__file__).resolve().parent.parent / "browser_launcher.py"
-                subprocess.Popen([sys.executable, str(launcher_py), target_url])
+                run_gui_py = Path(__file__).resolve().parent.parent.parent / "run_gui.py"
+                subprocess.Popen([sys.executable, str(run_gui_py), "--browser", target_url])
         except Exception as e:
             self.log(f"[Trình duyệt] Mở qua trình duyệt hệ thống: {e}")
             import webbrowser

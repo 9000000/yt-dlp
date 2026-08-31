@@ -10,6 +10,14 @@ import zipfile
 import subprocess
 from pathlib import Path
 
+# Đảm bảo UTF-8 output trên Windows console
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 ROOT_DIR = Path(__file__).resolve().parent
 DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
@@ -56,26 +64,22 @@ def run_pyinstaller():
         "--collect-all=curl_cffi",
         "--collect-all=PIL",
         "--collect-all=webview",
+        "--collect-all=pythonnet",
+        "--collect-all=clr_loader",
         "--collect-all=tkinterweb",
         "--collect-all=tkinterweb_tkhtml",
-        "--hidden-import=tool_gui",
-        "--hidden-import=tool_gui.license_manager",
-        "--hidden-import=tool_gui.updater",
-        "--hidden-import=tool_gui.downloader",
-        "--hidden-import=tool_gui.url_detector",
-        "--hidden-import=tool_gui.page_scanner",
-        "--hidden-import=tool_gui.embedded_browser",
-        "--hidden-import=tool_gui.browser_launcher",
-        "--hidden-import=tool_gui.config",
-        "--hidden-import=tool_gui.views",
-        "--hidden-import=tool_gui.views.activation_view",
-        "--hidden-import=tool_gui.views.download_view",
-        "--hidden-import=tool_gui.views.batch_view",
-        "--hidden-import=tool_gui.views.search_view",
-        "--hidden-import=tool_gui.views.browser_view",
-        "--hidden-import=tool_gui.views.tools_view",
-        "--hidden-import=tool_gui.views.settings_view",
-        "--hidden-import=tool_gui.views.log_view",
+        "--collect-all=tool_gui",
+        "--hidden-import=clr",
+        "--hidden-import=pythonnet",
+        "--hidden-import=clr_loader",
+        "--hidden-import=webview.platforms.winforms",
+        "--hidden-import=webview.platforms.edgechromium",
+        "--hidden-import=webview.platforms.edgehtml",
+        "--hidden-import=webview.platforms.mshtml",
+        "--hidden-import=tool_gui.embedded_browser_manager",
+        "--hidden-import=tool_gui.views.scan_results_dialog",
+        "--hidden-import=tool_gui.views.format_picker_dialog",
+        "--hidden-import=tool_gui.views.presets_view",
         str(ROOT_DIR / "run_gui.py")
     ]
 
@@ -90,23 +94,33 @@ def copy_assets():
     """Sao chép các phụ trợ cần thiết vào thư mục đóng gói."""
     log("Đang sao chép phụ trợ FFmpeg và tài liệu vào gói Portable...")
 
-    # 1. Sao chép thư mục bin/
+    # 1. Sao chép thư mục bin/ (chứa ffmpeg.exe & ffprobe.exe)
     src_bin = ROOT_DIR / "bin"
-    dst_bin = PORTABLE_APP_DIR / "bin"
     if src_bin.exists():
-        if dst_bin.exists():
-            shutil.rmtree(dst_bin)
-        shutil.copytree(src_bin, dst_bin)
+        for dst_bin in [PORTABLE_APP_DIR / "bin", PORTABLE_APP_DIR / "_internal" / "bin"]:
+            if dst_bin.exists():
+                shutil.rmtree(dst_bin)
+            shutil.copytree(src_bin, dst_bin)
+        log("✅ Đã sao chép FFmpeg & FFprobe vào gói đóng gói.")
 
     # 2. Sao chép thư mục yt_dlp_plugins/ nếu có
     src_plugins = ROOT_DIR / "yt_dlp_plugins"
-    dst_plugins = PORTABLE_APP_DIR / "_internal" / "yt_dlp_plugins"
     if src_plugins.exists():
-        if dst_plugins.exists():
-            shutil.rmtree(dst_plugins)
-        shutil.copytree(src_plugins, dst_plugins)
+        for dst_plugins in [PORTABLE_APP_DIR / "yt_dlp_plugins", PORTABLE_APP_DIR / "_internal" / "yt_dlp_plugins"]:
+            if dst_plugins.exists():
+                shutil.rmtree(dst_plugins)
+            shutil.copytree(src_plugins, dst_plugins)
 
-    # 3. Tạo file Hướng dẫn sử dụng
+    # 3. Sao chép public.key và config.json nếu có
+    for data_file in ["public.key", "config.json"]:
+        src_f = ROOT_DIR / data_file
+        if src_f.exists():
+            shutil.copy2(src_f, PORTABLE_APP_DIR / data_file)
+            int_dir = PORTABLE_APP_DIR / "_internal"
+            if int_dir.exists():
+                shutil.copy2(src_f, int_dir / data_file)
+
+    # 4. Tạo file Hướng dẫn sử dụng
     readme_txt = PORTABLE_APP_DIR / "HUONG_DAN_SU_DUNG.txt"
     with open(readme_txt, "w", encoding="utf-8") as f:
         f.write("""========================================================================

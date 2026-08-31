@@ -210,10 +210,14 @@ class FormatPickerDialog(ctk.CTkToplevel):
         else:
             if self.video_streams:
                 self.selected_video_id.set(self.video_streams[0]["id"])
+                self.enable_video_var.set(True)
             if self.audio_streams:
                 self.selected_audio_id.set(self.audio_streams[0]["id"])
-            self.enable_video_var.set(True)
-            self.enable_audio_var.set(True)
+                self.enable_audio_var.set(True)
+            if not self.video_streams and self.combined_streams:
+                self.selected_combined_id.set(self.combined_streams[0]["id"])
+                self.enable_video_var.set(False)
+                self.enable_audio_var.set(False)
 
     def setup_ui(self):
         container = ctk.CTkFrame(self, fg_color="transparent")
@@ -231,19 +235,31 @@ class FormatPickerDialog(ctk.CTkToplevel):
         dur = self.meta.get("duration_str", "--")
 
         ctk.CTkLabel(th_inner, text=f"🎬 {title}", font=("Segoe UI", 13, "bold"), text_color=("#0F172A", "#F8FAFC"), anchor="w", justify="left").pack(anchor="w")
-        ctk.CTkLabel(th_inner, text=f"👤 Kênh: {uploader}   |   ⏱️ Thời lượng: {dur}   |   📊 Tìm thấy: {len(self.video_streams)} luồng Video, {len(self.audio_streams)} luồng Audio", font=("Segoe UI", 11), text_color=("#475569", "#94A3B8"), anchor="w").pack(anchor="w", pady=(3, 0))
+        ctk.CTkLabel(th_inner, text=f"👤 Kênh: {uploader}   |   ⏱️ Thời lượng: {dur}   |   📊 Tìm thấy: {len(self.video_streams)} luồng Video riêng, {len(self.combined_streams)} luồng Kết hợp, {len(self.audio_streams)} luồng Audio", font=("Segoe UI", 11), text_color=("#475569", "#94A3B8"), anchor="w").pack(anchor="w", pady=(3, 0))
 
         # 2. Tabview hiển thị 3 nhóm luồng
         self.tabview = ctk.CTkTabview(container, corner_radius=10)
         self.tabview.pack(fill="both", expand=True, pady=(0, 10))
 
-        self.tab_video = self.tabview.add(f"🎥 Luồng Video Riêng ({len(self.video_streams)})")
-        self.tab_audio = self.tabview.add(f"🎵 Luồng Âm Thanh Riêng ({len(self.audio_streams)})")
-        self.tab_comb = self.tabview.add(f"🎬 Luồng Kết Hợp Sẵn ({len(self.combined_streams)})")
+        tab_v_title = f"🎥 Luồng Video Riêng ({len(self.video_streams)})"
+        tab_a_title = f"🎵 Luồng Âm Thanh Riêng ({len(self.audio_streams)})"
+        tab_c_title = f"🎬 Luồng Kết Hợp Sẵn ({len(self.combined_streams)})"
+
+        self.tab_video = self.tabview.add(tab_v_title)
+        self.tab_audio = self.tabview.add(tab_a_title)
+        self.tab_comb = self.tabview.add(tab_c_title)
 
         self._build_video_tab()
         self._build_audio_tab()
         self._build_combined_tab()
+
+        # Tự động chọn tab phù hợp nhất với nền tảng
+        if not self.video_streams and self.combined_streams:
+            self.tabview.set(tab_c_title)
+        elif self.video_streams:
+            self.tabview.set(tab_v_title)
+        elif self.audio_streams:
+            self.tabview.set(tab_a_title)
 
         # 3. Thanh thông tin lựa chọn & Nút áp dụng
         bot_bar = ctk.CTkFrame(container, corner_radius=10, fg_color=("#FFFFFF", "#1E293B"), border_width=1, border_color=("#CBD5E1", "#334155"))

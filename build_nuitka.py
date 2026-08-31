@@ -97,6 +97,75 @@ def prepare_staging_with_pyd():
 
     return True
 
+def ensure_ffmpeg():
+    """Kiểm tra và chuẩn bị sẵn FFmpeg trong thư mục bin/ trước khi đóng gói."""
+    bin_dir = PROJECT_DIR / "bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    ffmpeg_exe = bin_dir / "ffmpeg.exe"
+
+    if not ffmpeg_exe.exists():
+        print("🔍 Chưa phát hiện FFmpeg trong bin/, đang tự động tải bản dựng mới nhất...")
+        from tool_gui.updater import UpdaterManager
+        up = UpdaterManager(PROJECT_DIR)
+        success, msg = up.download_and_install_ffmpeg()
+        if success:
+            print("✅ Đã chuẩn bị sẵn FFmpeg thành công.")
+        else:
+            print(f"⚠️ Cảnh báo: Không thể tải sẵn FFmpeg ({msg}).")
+    else:
+        print("✅ FFmpeg đã có sẵn trong thư mục bin/.")
+
+def copy_assets_to_dist(dest_dir: Path):
+    """Sao chép FFmpeg, plugins và các dữ liệu cần thiết vào thư mục sản phẩm."""
+    print(f"📦 Đang sao chép phụ trợ FFmpeg và dữ liệu vào: {dest_dir.name}...")
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Sao chép thư mục bin/ chứa ffmpeg.exe & ffprobe.exe
+    src_bin = PROJECT_DIR / "bin"
+    if src_bin.exists():
+        for target_bin in [dest_dir / "bin", dest_dir / "_internal" / "bin"]:
+            if target_bin.exists():
+                shutil.rmtree(target_bin)
+            shutil.copytree(src_bin, target_bin)
+        print("   ✅ Đã nhúng FFmpeg & FFprobe.")
+
+    # 2. Sao chép yt_dlp_plugins nếu có
+    src_plugins = PROJECT_DIR / "yt_dlp_plugins"
+    if src_plugins.exists():
+        for target_plugins in [dest_dir / "yt_dlp_plugins", dest_dir / "_internal" / "yt_dlp_plugins"]:
+            if target_plugins.exists():
+                shutil.rmtree(target_plugins)
+            shutil.copytree(src_plugins, target_plugins)
+
+    # 3. Sao chép public.key và config.json
+    for data_name in ["public.key", "config.json"]:
+        src_data = PROJECT_DIR / data_name
+        if src_data.exists():
+            shutil.copy2(src_data, dest_dir / data_name)
+            int_dir = dest_dir / "_internal"
+            if int_dir.exists():
+                shutil.copy2(src_data, int_dir / data_name)
+
+def make_zip_archive(source_dir: Path, zip_file: Path):
+    """Nén thư mục ứng dụng thành tệp ZIP phân phối Portable."""
+    import zipfile
+    print(f"\n🗜️  Đang nén toàn bộ gói ứng dụng thành file ZIP: {zip_file.name}...")
+    if zip_file.exists():
+        try:
+            zip_file.unlink()
+        except Exception:
+            pass
+
+    with zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+        for root, dirs, files in os.walk(source_dir):
+            for file in files:
+                full_path = Path(root) / file
+                rel_path = full_path.relative_to(source_dir)
+                zf.write(full_path, arcname=str(Path(source_dir.name) / rel_path))
+
+    size_mb = zip_file.stat().st_size / (1024 * 1024)
+    print(f"✅ Đã nén thành công file ZIP: {zip_file} ({size_mb:.2f} MB)")
+
 def build_fast_hybrid_exe():
     """
     Chế độ KHUYÊN DÙNG: Mã hóa các file lõi sang .pyd (C native) + Đóng gói nhanh bằng PyInstaller.
@@ -112,6 +181,7 @@ def build_fast_hybrid_exe():
     if not check_nuitka_installed():
         return False
 
+    ensure_ffmpeg()
     prepare_staging_with_pyd()
 
     out_dir = DIST_DIR / "ToolDL_Pro"
@@ -125,10 +195,28 @@ def build_fast_hybrid_exe():
         "--onedir",
         "--windowed",
         "--name=ToolDL",
-        "--add-data=public.key;.",
-        "--add-data=config.json;.",
-        "--copy-metadata=customtkinter",
-        "--copy-metadata=yt_dlp",
+        "--collect-all=customtkinter",
+        "--collect-all=yt_dlp",
+        "--collect-all=yt_dlp_plugins",
+        "--collect-all=curl_cffi",
+        "--collect-all=PIL",
+        "--collect-all=webview",
+        "--collect-all=pythonnet",
+        "--collect-all=clr_loader",
+        "--collect-all=tkinterweb",
+        "--collect-all=tkinterweb_tkhtml",
+        "--collect-all=tool_gui",
+        "--hidden-import=clr",
+        "--hidden-import=pythonnet",
+        "--hidden-import=clr_loader",
+        "--hidden-import=webview.platforms.winforms",
+        "--hidden-import=webview.platforms.edgechromium",
+        "--hidden-import=webview.platforms.edgehtml",
+        "--hidden-import=webview.platforms.mshtml",
+        "--hidden-import=tool_gui.embedded_browser_manager",
+        "--hidden-import=tool_gui.views.scan_results_dialog",
+        "--hidden-import=tool_gui.views.format_picker_dialog",
+        "--hidden-import=tool_gui.views.presets_view",
         f"--distpath={DIST_DIR}",
         f"--workpath={PROJECT_DIR / 'build' / 'pyinstaller_work'}",
         str(BUILD_TEMP_DIR / "run_gui.py")
@@ -151,11 +239,19 @@ def build_fast_hybrid_exe():
         if final_app_dir.exists() and not out_dir.exists():
             final_app_dir.rename(out_dir)
 
+        copy_assets_to_dist(out_dir)
+
+        # Đóng gói tự động thành file ZIP Portable
+        zip_output = DIST_DIR / "ToolDL_Pro_Portable.zip"
+        make_zip_archive(out_dir, zip_output)
+
         print("\n" + "=" * 68)
-        print(" 🎉 BUILD SIÊU TỐC THÀNH CÔNG!")
+        print(" 🎉 BUILD SIÊU TỐC & ĐÓNG GÓI ZIP THÀNH CÔNG!")
         print(f" 📂 Thư mục sản phẩm: {out_dir}")
+        print(f" 📦 Tệp nén Portable: {zip_output}")
         print(" 🚀 Tệp khởi chạy: ToolDL.exe")
-        print(" 🔒 Các file cốt lõi (license_manager, downloader, url_detector) đã được bảo vệ dạng .pyd!")
+        print(" 🔒 Các file cốt lõi (license_manager, downloader, url_detector, config, updater)")
+        print("    đã được biên dịch sang mã máy C/C++ (.pyd) chống reverse engineering 100%!")
         print("=" * 68)
         return True
     else:
@@ -170,6 +266,8 @@ def build_protected_bundle():
 
     if not check_nuitka_installed():
         return False
+
+    ensure_ffmpeg()
 
     out_bundle_dir = DIST_DIR / "ToolDL_Protected"
     if out_bundle_dir.exists():
@@ -187,6 +285,8 @@ def build_protected_bundle():
             shutil.copy2(item, dest)
 
     clean_temp()
+    copy_assets_to_dist(out_bundle_dir)
+
     print("\n" + "=" * 68)
     print(" 🎉 XUẤT BẢN THÀNH CÔNG GÓI MÃ HÓA!")
     print(f" 📂 Thư mục sản phẩm: {out_bundle_dir}")
@@ -202,6 +302,8 @@ def build_full_nuitka_exe():
     if not check_nuitka_installed():
         return False
 
+    ensure_ffmpeg()
+
     out_dir = DIST_DIR / "ToolDL_FullNuitka"
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -215,6 +317,10 @@ def build_full_nuitka_exe():
         "--include-package=yt_dlp",
         "--include-package=PIL",
         "--include-package=cryptography",
+        "--include-package=webview",
+        "--include-package=pythonnet",
+        "--include-package=clr_loader",
+        "--include-package=tool_gui",
         "--include-data-file=public.key=public.key",
         "--include-data-file=config.json=config.json",
         f"--output-dir={out_dir}",
@@ -226,6 +332,10 @@ def build_full_nuitka_exe():
     ret = subprocess.run(cmd, cwd=str(PROJECT_DIR))
     
     if ret.returncode == 0:
+        dist_app = out_dir / "run_gui.dist"
+        if dist_app.exists():
+            copy_assets_to_dist(dist_app)
+
         print("\n" + "=" * 68)
         print(" 🎉 ĐÓNG GÓI .EXE THÀNH CÔNG!")
         print(f" 📂 Vị trí ứng dụng: {out_dir / 'run_gui.dist'}")

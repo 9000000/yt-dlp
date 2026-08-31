@@ -22,12 +22,14 @@ if sys.platform == "win32":
 
 # Kiểm tra nếu chạy chế độ Trình duyệt nhúng trực tiếp vào HWND của GUI
 if len(sys.argv) > 1 and sys.argv[1] == "--embedded-browser":
-    from tool_gui.embedded_browser import run_embedded_webview
+    from tool_gui.embedded_browser_manager import run_embedded_browser
     p_hwnd = int(sys.argv[2]) if len(sys.argv) > 2 else 0
     init_url = sys.argv[3] if len(sys.argv) > 3 else "https://www.youtube.com"
-    w = int(sys.argv[4]) if len(sys.argv) > 4 else 800
-    h = int(sys.argv[5]) if len(sys.argv) > 5 else 500
-    run_embedded_webview(p_hwnd, init_url, w, h)
+    w = int(sys.argv[4]) if len(sys.argv) > 4 else 1100
+    h = int(sys.argv[5]) if len(sys.argv) > 5 else 650
+    doh = sys.argv[6] if len(sys.argv) > 6 else ""
+    a_dir = sys.argv[7] if len(sys.argv) > 7 else ""
+    run_embedded_browser(p_hwnd, init_url, w, h, doh, a_dir)
     sys.exit(0)
 
 # Kiểm tra nếu chạy chế độ Trình duyệt độc lập
